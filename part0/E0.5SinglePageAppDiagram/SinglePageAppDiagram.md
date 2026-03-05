@@ -1,4 +1,4 @@
-# New Note Creation Diagram - Exercise 0.4
+# Single page app diagram - Exercise 0.5
 
 ```mermaid
 sequenceDiagram
