@@ -13,12 +13,19 @@ const Button = ({ name , onClick})=>{
 }
 
 const Statistics = ({ good, neutral, bad }) => {
+  const total = parseInt(good + neutral + bad)
+  const average = total === 0 ? 0 : parseFloat((good*(1) + neutral*(0) + bad*(-1))/total)
+  const positive = total === 0 ? 0 : parseFloat((good/total)*100)
+
   return (
     <>
       <h2>Statistics</h2>
-      <p>Good {good}</p>
-      <p>Neutral {neutral}</p>
-      <p>Bad {bad}</p>
+      <p>Good { good }</p>
+      <p>Neutral { neutral }</p>
+      <p>Bad { bad }</p>
+      <p>All { total }</p>
+      <p>Average { average.toFixed(2) }</p>
+      <p>Positive { positive.toFixed(2) }%</p>
     </>
   )
 }
