@@ -6,9 +6,15 @@ const Header = ()=>{
 
 const Button = ({ name , onClick})=>{
   return (
-  <>
     <button onClick={onClick}>{ name }</button>
-  </>
+  )
+}
+
+const StatisticLine = ({ text, value }) => {
+  return (
+    <p>
+      { text } { value}
+    </p>
   )
 }
 
@@ -31,12 +37,12 @@ const Statistics = ({ good, neutral, bad }) => {
   return (
     <>
     <h2>Statistics</h2>
-    <p>Good { good }</p>
-    <p>Neutral { neutral }</p>
-    <p>Bad { bad }</p>
-    <p>All { total }</p>
-    <p>Average { average.toFixed(2) }</p>
-    <p>Positive { positive.toFixed(2) }%</p>
+    <StatisticLine text="good" value={good} />
+    <StatisticLine text="neutral" value={neutral} />
+    <StatisticLine text="bad" value={bad} />
+    <StatisticLine text="all" value={total} />
+    <StatisticLine text="average" value={average.toFixed(2)} />
+    <StatisticLine text="positive" value={positive.toFixed(2) + "%"} />
     </>
   )
 }
