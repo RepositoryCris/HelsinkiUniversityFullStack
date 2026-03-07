@@ -42,6 +42,7 @@ const App = () => {
       <Button name = "good" onClick = { () => setGood(good+1) }/>
       <Button name = "neutral" onClick = { () => setNeutral(neutral+1) }/>
       <Button name = "bad" onClick = { () => setBad(bad+1) }/>
+      {/*Statistics component refactored*/}
       <Statistics good = { good }
                   neutral ={ neutral }
                   bad = { bad } />
