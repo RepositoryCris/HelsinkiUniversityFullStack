@@ -17,15 +17,26 @@ const Statistics = ({ good, neutral, bad }) => {
   const average = total === 0 ? 0 : parseFloat((good*(1) + neutral*(0) + bad*(-1))/total)
   const positive = total === 0 ? 0 : parseFloat((good/total)*100)
 
+  // If no feedback, show message
+  if (total === 0) {
+    return (
+      <>
+        <h2>Statistics</h2>
+        <p>No feedback given</p>
+      </>
+    )
+  }
+
+  // Otherwise show statistics
   return (
     <>
-      <h2>Statistics</h2>
-      <p>Good { good }</p>
-      <p>Neutral { neutral }</p>
-      <p>Bad { bad }</p>
-      <p>All { total }</p>
-      <p>Average { average.toFixed(2) }</p>
-      <p>Positive { positive.toFixed(2) }%</p>
+    <h2>Statistics</h2>
+    <p>Good { good }</p>
+    <p>Neutral { neutral }</p>
+    <p>Bad { bad }</p>
+    <p>All { total }</p>
+    <p>Average { average.toFixed(2) }</p>
+    <p>Positive { positive.toFixed(2) }%</p>
     </>
   )
 }
@@ -42,7 +53,6 @@ const App = () => {
       <Button name = "good" onClick = { () => setGood(good+1) }/>
       <Button name = "neutral" onClick = { () => setNeutral(neutral+1) }/>
       <Button name = "bad" onClick = { () => setBad(bad+1) }/>
-      {/*Statistics component refactored*/}
       <Statistics good = { good }
                   neutral ={ neutral }
                   bad = { bad } />
