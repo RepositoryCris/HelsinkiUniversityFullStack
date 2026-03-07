@@ -1,53 +1,62 @@
-const Header = (props) => <h1>{props.course}</h1>
+const Header = ({ name }) => <h1>{ name }</h1>
 
-const Content = (props) => (
-  <div>
-    <Part part={props.parts[0]} />
-    <Part part={props.parts[1]} />
-    <Part part={props.parts[2]} />
-  </div>
+const Content = ({ parts }) => (
+  <>
+    {parts.map(part => (
+      <Part key={part.id} part={part} />
+    ))}
+  </>
 )
 
-const Part = (props) => (
-  <p>
-    {props.part.name} {props.part.exercises}
-  </p>
-)
+const Part = ({ part }) => (
+      <p>{part.name} {part.exercises}</p>
+  )
 
-const Total = (props) => <p>Number of exercises {props.total}</p>
+const Course = ({ course }) => {
+  return(
+    <>
+      <Header name = { course.name }/>
+      <Content parts = { course.parts } />
+    </>
+  )
+}
 
 const App = () => {
   const course = {
+    id: 1,
     name: 'Half Stack application development',
     parts: [
       {
         name: 'Fundamentals of React',
         exercises: 10,
+        id: 1
       },
       {
         name: 'Using props to pass data',
         exercises: 7,
+        id: 2
       },
       {
         name: 'State of a component',
         exercises: 14,
-      },
-    ],
+        id: 3
+      }
+    ]
   }
 
-  return (
-    <div>
-      <Header course={course.name} />
-      <Content parts={course.parts} />
-      <Total
-        total={
-          course.parts[0].exercises +
-          course.parts[1].exercises +
-          course.parts[2].exercises
-        }
-      />
-    </div>
-  )
+  return <Course course = { course } />
 }
 
 export default App
+
+{/* Inspect, react components should look like this:
+  App
+    Course
+      Header
+      Content
+        Part   key: 1
+        Part   key: 2
+        Part   key: 3 
+  
+  This code is like an experienced React developer*/
+      }
