@@ -23,16 +23,9 @@ const Course = ({ course }) => {
 }
 
 const Total = ({ parts }) => {
-  const sum = parts.reduce((total, part) => {
-
-    console.log('Total so far:', total, 'Adding:', part.exercises)
-    return total + part.exercises
-  }, 0)
-
-  console.log('Total',sum)
+  const sum = parts.reduce((total, part) => total + part.exercises, 0)
   return <p>Total of {sum} exercises</p>
 }
-
 
 const App = () => {
   const courses = [
