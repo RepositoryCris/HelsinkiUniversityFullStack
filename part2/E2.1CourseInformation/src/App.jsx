@@ -24,9 +24,14 @@ const Course = ({ course }) => {
 
 
 const Total = ({ parts }) => {
-  const sum = parts.reduce((total,part) => total + part.exercises, 0 )
+  const sum = parts.reduce((total, part) => {
 
-  return <p>Total of { sum } exercises</p>
+    console.log('Total so far:', total, 'Adding:', part.exercises)
+    return total + part.exercises
+  }, 0)
+  
+  console.log('Total',sum)
+  return <p>Total of {sum} exercises</p>
 }
 
 
