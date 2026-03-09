@@ -2,7 +2,7 @@ import { useState , useEffect } from 'react'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
-import { getAll , createPerson } from './services/persons'
+import { getAll , createPerson , deletePerson } from './services/persons'
 
 const App = () => {
   const [persons, setPersons] = useState([]) 
@@ -23,6 +23,22 @@ const App = () => {
     : persons.filter(person =>
         person.name.toLowerCase().includes(filter.toLowerCase())
       )
+  
+  const handleDelete = ( id ) => {
+      const person = persons.find(p => p.id === id)
+    
+      if (window.confirm(`Delete ${person.name}?`)) {
+        deletePerson(id)
+          .then(() => {
+            // Remove the deleted person from state
+            setPersons(persons.filter(p => p.id !== id))
+          })
+          .catch(error => {
+            console.error('Error deleting person:', error)
+            alert('Failed to delete person from server')
+          })
+        }
+      }
 
   const addPerson = ( event ) => {
     event.preventDefault()
@@ -71,7 +87,9 @@ const App = () => {
         handleNumberChange = { handleNumberChange }
         newNumber = { newNumber } />
       <h3>Numbers</h3>
-      <Persons persons = { personsToShow }/>
+      <Persons
+        persons = { personsToShow }
+        handleDelete = { handleDelete } />
     </div>
   )
 }

@@ -21,19 +21,14 @@
       "id": "4"
     },
     {
-      "id": "e211",
-      "name": "cristian",
-      "number": "73259033"
+      "id": "1ae7",
+      "name": "developer from bolivia",
+      "number": "+591 7777777"
     },
     {
-      "id": "8353",
-      "name": "cris",
-      "number": "123"
-    },
-    {
-      "id": "2967",
-      "name": "lea",
-      "number": "468"
+      "id": "2c1b",
+      "name": "react junior developer",
+      "number": "+0000 7654321"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
