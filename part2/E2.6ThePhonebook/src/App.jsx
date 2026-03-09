@@ -2,7 +2,7 @@ import { useState , useEffect } from 'react'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
-import { getAll , createPerson , deletePerson } from './services/persons'
+import { getAll , createPerson , deletePerson , updatePerson } from './services/persons'
 
 const App = () => {
   const [persons, setPersons] = useState([]) 
@@ -11,13 +11,18 @@ const App = () => {
   const [filter, setFilter] = useState('')
   
   useEffect(() => {
-      getAll().then(response => setPersons(response.data))
-    }, [])
+    getAll()
+      .then(data => setPersons(data))
+      .catch(err => {
+        console.error('Failed to fetch persons:', err)
+      alert('Could not fetch persons from server')
+      })
+  }, [])
 
   const handleNameChange  = ({ target }) => setNewName(target.value)
   const handleNumberChange  = ({ target }) => setNewNumber(target.value)
   const handleFilterChange = ({ target }) => setFilter(target.value)
-
+   
   const personsToShow = filter === ''
     ? persons
     : persons.filter(person =>
@@ -26,12 +31,12 @@ const App = () => {
   
   const handleDelete = ( id ) => {
       const person = persons.find(p => p.id === id)
+      if (!person) return
     
       if (window.confirm(`Delete ${person.name}?`)) {
         deletePerson(id)
           .then(() => {
-            // Remove the deleted person from state
-            setPersons(persons.filter(p => p.id !== id))
+            setPersons(prev => prev.filter(p => p.id !== id))
           })
           .catch(error => {
             console.error('Error deleting person:', error)
@@ -39,8 +44,13 @@ const App = () => {
           })
         }
       }
+  
+  const resetInputs = () => {
+    setNewName('')
+    setNewNumber('')
+  }
 
-  const addPerson = ( event ) => {
+  const addPerson = (event) => {
     event.preventDefault()
 
     const personObject = {
@@ -48,29 +58,43 @@ const App = () => {
       number: newNumber
     }
     
-    const nameExists = persons.some((person) => person.name.toLowerCase() === newName.toLowerCase())
-
     if (newName.trim() === '' || newNumber.trim() === '') {
       alert('Name and number cannot be empty')
-      setNewName('')
-      setNewNumber('')
-      return
-    }
-
-    if ( nameExists ){
-      alert(`${ newName } is already added to phonebook`)
-      setNewName('')
-      setNewNumber('')
+      resetInputs()
       return
     }
     
-    createPerson(personObject).then(
-      response => {
-      setPersons(persons.concat(response.data))
-      setNewName('')
-      setNewNumber('')
-      }
+    const existingPerson = persons.find(
+      person => person.name.toLowerCase() === newName.toLowerCase()
     )
+
+    if (existingPerson) {
+    const confirmUpdate = window.confirm(
+      `${existingPerson.name} is already added to phonebook, replace the old number with a new one?`
+    )
+      if (confirmUpdate) {
+      const updatedPerson = { ...existingPerson, number: newNumber }
+      
+      updatePerson(existingPerson.id, updatedPerson)
+        .then(data => {
+          setPersons(prev => prev.map(person => person.id !== existingPerson.id ? person : data))
+          })
+        .catch(error => {
+          console.error('Failed to update person:', error)
+          alert('Could not update person on server')
+        })
+        .finally(() => resetInputs())
+      }
+      return
+    }
+
+    createPerson(personObject)
+      .then(data => setPersons(prev => prev.concat(data)))
+      .catch(error => {
+        console.error('Failed to create person:', error)
+        alert('Could not add person to server')
+      })
+      .finally(() => resetInputs())
   }
 
   return (
