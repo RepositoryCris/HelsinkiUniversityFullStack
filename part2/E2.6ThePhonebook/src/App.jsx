@@ -37,8 +37,7 @@ const App = () => {
 
     const personObject = {
       name: newName,
-      number: newNumber,
-      id: persons.length > 0 ? Math.max(...persons.map(p => p.id)) + 1 : 1
+      number: newNumber
     }
     
     const nameExists = persons.some((person) => person.name.toLowerCase() === newName.toLowerCase())
@@ -57,9 +56,14 @@ const App = () => {
       return
     }
 
-    setPersons(persons.concat(personObject))
-    setNewName('')
-    setNewNumber('')
+    axios
+      .post('http://localhost:3001/persons', personObject)
+      .then(response => {
+        setPersons(persons.concat(response.data))
+        setNewName('')
+        setNewNumber('')
+      })
+      
   }
 
   return (
