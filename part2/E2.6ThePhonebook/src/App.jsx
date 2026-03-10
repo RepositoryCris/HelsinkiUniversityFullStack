@@ -15,14 +15,19 @@ const App = () => {
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
-  const [successMessage, setSuccessMessage] = useState(null);
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     getAll()
-      .then((data) => setPersons(data))
+      .then((data) => {
+        setPersons(data);
+      })
       .catch((err) => {
         console.error("Failed to fetch persons:", err);
-        alert("Could not fetch persons from server");
+        setNotification({
+          message: "Could not fetch persons from server",
+          type: "error",
+        });
       });
   }, []);
 
@@ -45,25 +50,32 @@ const App = () => {
       deletePerson(id)
         .then(() => {
           setPersons((prev) => prev.filter((p) => p.id !== id));
+          setNotification({
+            message: `${person.name} deleted from the phonebook`,
+            type: "info",
+          });
         })
         .catch((error) => {
           console.error("Error deleting person:", error);
-          alert("Failed to delete person from server");
+          setNotification({
+            message: `Could not delete ${person.name}, it may not be in the server, try reloading`,
+            type: "warning",
+          });
         });
     }
   };
 
   useEffect(() => {
-    if (successMessage) {
+    if (notification) {
       const timeoutId = setTimeout(() => {
-        setSuccessMessage(null);
+        setNotification(null);
       }, 5000);
 
       // The Cleanup Function:
-      // This runs if successMessage changes OR the component unmounts
+      // This runs if notification changes OR the component unmounts
       return () => clearTimeout(timeoutId);
     }
-  }, [successMessage]);
+  }, [notification]);
 
   const resetInputs = () => {
     setNewName("");
@@ -79,7 +91,10 @@ const App = () => {
     };
 
     if (newName.trim() === "" || newNumber.trim() === "") {
-      alert("Name and number cannot be empty");
+      setNotification({
+        message: "Name and number cannot be empty",
+        type: "warning",
+      });
       resetInputs();
       return;
     }
@@ -98,18 +113,27 @@ const App = () => {
         updatePerson(existingPerson.id, updatedPerson)
           .then((data) => {
             setPersons((prev) =>
-              prev.map((person) =>
-                person.id !== existingPerson.id ? person : data,
-              ),
+              prev.map((person) => (person.id === data.id ? data : person)),
             );
-            setSuccessMessage(
-              `The number of ${data.name} is updated to ${data.number}`,
-            );
+            setNotification({
+              message: `The number of ${data.name} is updated to ${data.number}`,
+              type: "success",
+            });
             // No timer logic here! The useEffect above sees the message change and starts the timer automatically.
           })
           .catch((error) => {
+            setNotification({
+              message: `Information of '${existingPerson.name}' has already been removed from the server`,
+              type: "error",
+            });
             console.error("Failed to update person:", error);
-            alert("Could not update person on server");
+            // Update the state to remove the deleted person:
+            // 1. `prev` is the previous array of persons in state
+            // 2. `.filter(...)` creates a new array excluding the person with the matching ID
+            // 3. This ensures we remove the person immutably without mutating the original state
+            setPersons((prev) =>
+              prev.filter((person) => person.id !== existingPerson.id),
+            );
           })
           .finally(() => resetInputs());
       }
@@ -119,20 +143,26 @@ const App = () => {
     createPerson(personObject)
       .then((data) => {
         setPersons((prev) => prev.concat(data));
-        setSuccessMessage(`'${data.name}' added to the phonebook`);
+        setNotification({
+          message: `'${data.name}' added to the phonebook`,
+          type: "success",
+        });
         // No timer logic here! The useEffect above sees the message change and starts the timer automatically.
       })
       .catch((error) => {
         console.error("Failed to create person:", error);
-        alert("Could not add person to server");
+        setNotification({
+          message: "Could not create person on server",
+          type: "error",
+        });
       })
       .finally(() => resetInputs());
   };
 
   return (
     <div>
+      <Notification notification={notification} />
       <h2>Phonebook</h2>
-      <Notification message={successMessage} />
       <Filter handleFilterChange={handleFilterChange} filter={filter} />
       <h3>Add a new</h3>
       <PersonForm
