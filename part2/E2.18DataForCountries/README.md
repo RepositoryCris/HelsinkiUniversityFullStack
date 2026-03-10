@@ -32,6 +32,10 @@ npm run dev
 
 It will run vite http://localhost:5173/ press o to open the browser
 
+# Install axios
+
+npm install axios
+
 # Git commands
 
 git checkout part2
@@ -39,3 +43,9 @@ git status
 git add .
 git commit -m "New commit message"
 git push
+
+## 🌐 Fetch API - Important Note on Data Structure
+
+If API returns single object → store as object or array with one item
+
+If API returns array of objects → store as array directly (no extra wrapping)
