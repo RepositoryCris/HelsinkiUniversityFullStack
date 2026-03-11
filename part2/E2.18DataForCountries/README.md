@@ -178,3 +178,9 @@ Then just run normally: npm run dev
 USE THE KEY
 const apiKey = import.meta.env.VITE_WEATHER_KEY
 console.log(apiKey)
+
+Consider: ALWAYS restart the dev server after changing .env and use a new console
+
+✅ Quick tip
+
+Use ?. whenever you’re reading data from an API or any object that may be incomplete.
