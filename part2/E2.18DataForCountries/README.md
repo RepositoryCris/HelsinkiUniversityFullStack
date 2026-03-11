@@ -145,6 +145,8 @@ Wait a few minutes until it activates
 
 ## Store the API key correctly (IMPORTANT)
 
+⚠️ Important: First in the .gitignore file add .env for not having it in public
+
 Do not write the key directly in your code.
 
 Instead use an environment variable.
@@ -165,6 +167,8 @@ Restart npm run dev after creating it.
 
 ### resume
 
+⚠️ Important: add .env in .gitignore file
+
 create a file in the root called .env
 
 Inside it: VITE_WEATHER_KEY="the key pf your account"
@@ -174,5 +178,3 @@ Then just run normally: npm run dev
 USE THE KEY
 const apiKey = import.meta.env.VITE_WEATHER_KEY
 console.log(apiKey)
-
-in the .gitignore file add .env for not having it in public
