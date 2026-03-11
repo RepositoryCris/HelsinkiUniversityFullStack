@@ -49,3 +49,27 @@ git push
 If API returns single object → store as object or array with one item
 
 If API returns array of objects → store as array directly (no extra wrapping)
+
+## Full render flow summary
+
+App loads
+↓
+useEffect fetches countries
+↓
+countries state updates
+↓
+App re-renders
+↓
+Filter receives nations
+↓
+renderContent decides what to display
+↓
+User clicks "Show"
+↓
+setSelectedCountry(country)
+↓
+App state updates
+↓
+React re-renders
+↓
+Country component appears

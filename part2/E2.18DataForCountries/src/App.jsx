@@ -1,10 +1,20 @@
 import { useState, useEffect } from "react";
-import Filter from "./components/Filter";
 import { fetchAll } from "./services/countries";
+
+import CountrySearch from "./components/CountrySearch";
+import CountryList from "./components/CountryList";
 
 const App = () => {
   const [countries, setCountries] = useState([]);
   const [filter, setFilter] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(null);
+
+  const filteredCountries =
+    filter === ""
+      ? countries
+      : countries.filter((country) =>
+          country.name.common.toLowerCase().includes(filter.toLowerCase()),
+        );
 
   useEffect(() => {
     fetchAll()
@@ -16,25 +26,23 @@ const App = () => {
       });
   }, []);
 
-  const handleFilterOnChange = ({ target }) => setFilter(target.value);
-
-  {
-    /* If the value of filter is ''(empty), it returns all the data. If the value of filter has content it will filter all that match*/
-  }
-  const country =
-    filter === ""
-      ? countries
-      : countries.filter((item) =>
-          item.name.common.toLowerCase().includes(filter.toLowerCase()),
-        );
+  const handleFilterOnChange = ({ target }) => {
+    setFilter(target.value);
+    setSelectedCountry(null);
+  };
 
   return (
     <>
       <h1>Data for countries</h1>
-      <Filter
+      <CountrySearch
         filter={filter}
-        country={country}
         handleFilterOnChange={handleFilterOnChange}
+      />
+
+      <CountryList
+        filteredCountries={filteredCountries}
+        selectedCountry={selectedCountry}
+        setSelectedCountry={setSelectedCountry}
       />
     </>
   );
