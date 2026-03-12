@@ -399,3 +399,23 @@ Representational State Transfer, aka REST, was introduced in 2000 in Roy Fieldin
 In some places you will see our model for a straightforward CRUD API, being referred to as an example of resource-oriented architecture instead of REST.
 
 # Fetching a single resource
+
+# Run as a script or as a development
+
+- Run as a script with 'npm start'
+- Add development mode with 'npm run dev'
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> npm start
+
+> e3.1phonebookbackend@1.0.0 start
+> node index.js
+
+Server running on port 3001
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> npm run dev
+
+> e3.1phonebookbackend@1.0.0 dev
+> node --watch index.js
+
+Server running on port 3001
+```
