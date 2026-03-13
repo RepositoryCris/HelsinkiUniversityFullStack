@@ -19,3 +19,13 @@ app.listen(PORT, () => {
 app.get("/info", (request, response) => {
   response.send(utils.getInfoMessage(persons));
 });
+
+app.get("/api/persons/:id", (request, response) => {
+  const id = request.params.id;
+  const person = persons.find((person) => person.id === id);
+  if (!person) {
+    return response.status(404).end();
+  }
+
+  response.json(person);
+});
