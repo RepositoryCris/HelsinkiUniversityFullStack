@@ -1,3 +1,5 @@
+#@baseUrl = http://localhost:3001
+
 ### Get root endpoint
 GET http://localhost:3001/
 
@@ -15,3 +17,12 @@ GET http://localhost:3001/api/persons/10
 
 ### Delete person with ID 1
 DELETE http://localhost:3001/api/persons/1
+
+### Post a new person
+POST http://localhost:3001/api/persons/
+content-type: application/json
+
+{
+    "name": "Cristian Junior Developer",
+    "number": 7777777
+}

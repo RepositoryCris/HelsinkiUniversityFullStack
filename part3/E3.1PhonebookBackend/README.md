@@ -493,6 +493,199 @@ If deleting the resource is successful, meaning that the note exists and is remo
 
 There's no consensus on what status code should be returned to a DELETE request if the resource does not exist. _The only two options are 204 and 404._ For the sake of simplicity, our application will respond with **204** in both cases.
 
+# Receiving data
+
+Let's make it possible to add new notes to the server.
+Adding a note happens by making an HTTP POST request to the address http://localhost:3001/api/persons/ , and by sending all the information for the new note in the request body in JSON format.
+
+To **access** the data easily, we need the **help of the Express json-parser** that we can use with the command **app.use(express.json())**.
+
+Let's activate the json-parser and implement an initial handler for dealing with the HTTP POST requests:
+
+```JavaScript
+const express = require('express')
+const app = express()
+
+app.use(express.json())    //<-- json-parser
+
+//...
+
+app.post("/api/persons", (request, response) => {
+  const person = request.body;
+  console.log("Received person:", person); // This will show the parsed JSON
+  response.json(person);
+});
+```
+
+The event handler function can access the data from the body property of the request object.
+
+**_Without the json-parser, the body property would be undefined._**
+
+The **json-parser takes the JSON data of a request, transforms it into a JavaScript object** and **_then attaches it to the body property of the request object_** before the route handler is called.
+
+For the time being, the application does not do anything with the received data besides printing it to the console and sending it back in the response.
+
+## Postman - Add an object to post
+
+Make sure to send the data correctly with **_JSON_** to receive response in **Content-Type as application/json; charset=utf-8**
+
+![Postman post correctly JSON data test](./readme-images/image-6.png)
+
+![Postman console debugging](./readme-images/image-7.png)
+
+## Rest client - Add an object to post
+
+![Rest client Post test](./readme-images/image-8.png)
+
+![Rest client Post response](./readme-images/image-9.png)
+
+![Rest client Post console debugging](./readme-images/image-10.png)
+
+✅ Correct Syntax Rules
+
+```bash
+### [Request Name]
+[HTTP METHOD] [URL]
+[Header1]: [value]
+[Header2]: [value]
+                                    ← ONE empty line (CRITICAL!)
+[Request Body (JSON, text, etc.)]
+```
+
+- Common Mistakes to Avoid
+
+❌ Wrong - Empty line before headers
+
+```bash
+### Post person
+POST http://localhost:3001/api/persons/
+                                    ← WRONG: This empty line kills all headers!
+content-type: application/json
+
+{
+    "name": "John"
+}
+```
+
+❌ Wrong - No empty line before body
+
+```bash
+### Post person
+POST http://localhost:3001/api/persons/
+content-type: application/json
+{                                   ← WRONG: Missing empty line before body!
+    "name": "John"
+}
+```
+
+✅ Correct - Perfect format
+
+```bash
+### Post person
+POST http://localhost:3001/api/persons/
+content-type: application/json
+                                    ← RIGHT: One empty line (and only one!)
+{
+    "name": "John"
+}
+```
+
+🐛 Debugging Example
+
+#### Backend Debug Code:
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.use(express.json()); // JSON parser middleware
+
+app.post("/api/persons", (request, response) => {
+  // DEBUGGING LINE 1: Check if headers are received
+  console.log("🔍 CONTENT-TYPE HEADER:", request.headers["content-type"]);
+
+  // DEBUGGING LINE 2: Check all headers received
+  console.log("🔍 ALL HEADERS:", request.headers);
+
+  // DEBUGGING LINE 3: Check the body
+  console.log("🔍 REQUEST BODY:", request.body);
+
+  // DEBUGGING LINE 4: Check if body is empty
+  console.log("🔍 BODY EMPTY?", Object.keys(request.body).length === 0);
+
+  // Send response
+  response.json({
+    received: request.body,
+    status: "success",
+    contentType: request.headers["content-type"],
+  });
+});
+```
+
+🎯 Test Scenarios
+
+### Test 1: Correct Request ✅
+
+```bash
+### TEST 1 - Correct format
+POST http://localhost:3001/api/persons/
+content-type: application/json
+
+{
+    "name": "Cris",
+    "role": "developer"
+}
+```
+
+Server Output:
+
+```text
+🔍 CONTENT-TYPE HEADER: application/json
+🔍 ALL HEADERS: { host: 'localhost:3001', 'content-type': 'application/json', ... }
+🔍 REQUEST BODY: { name: 'Cris', role: 'developer' }
+🔍 BODY EMPTY? false
+```
+
+### Test 2: Wrong Format (Empty line before headers) ❌
+
+```bash
+### TEST 2 - Wrong format (empty line before headers)
+POST http://localhost:3001/api/persons/
+#<-- clear this empty line if you want this test to be right
+content-type: application/json
+
+{
+    "name": "Cris",
+    "role": "developer"
+}
+```
+
+Server Output:
+
+```text
+🔍 CONTENT-TYPE HEADER: undefined
+🔍 ALL HEADERS: { host: 'localhost:3001' }  ← Notice: no content-type!
+🔍 REQUEST BODY: {}
+🔍 BODY EMPTY? true
+```
+
+💡 **Quick Troubleshooting Guide**
+
+| Symptom                       | Cause                     | Fix                                        |
+| :---------------------------- | :------------------------ | :----------------------------------------- |
+| `request.body` is `{}`        | No content-type header    | Check empty line after URL                 |
+| `request.body` is `undefined` | JSON parser not working   | Ensure `app.use(express.json())` is called |
+| Headers show but body empty   | Wrong content-type        | Use `application/json` exactly             |
+| Parser not working            | Empty line before headers | Remove empty line between URL and headers  |
+
+✅ **The golden rule: Headers right after URL, ONE empty line, then body!**
+
+# Important sidenote when debugging
+
+**_Sometimes when you're debugging_**, you may want to find out what **headers** have been set in the HTTP request. One way of **accomplishing** this is through the **get method of the request object**, **_that can be used for getting the value of a single header_**. The request object also has the headers property, that contains all of the headers of a specific request.
+
+**NB:** Sometimes in the console there will be cached data due to by node --watch (try **stopping and restarting**)
+
 # Postman
 
 Install the Postman desktop client and try it out.
