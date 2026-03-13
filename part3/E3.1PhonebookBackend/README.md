@@ -400,6 +400,145 @@ In some places you will see our model for a straightforward CRUD API, being refe
 
 # Fetching a single resource
 
+We can define parameters for **routes in Express** by using the **colon syntax** - example _'/api/notes/**:id'**_
+
+```bash
+app.get('/api/notes/:id', (request, response) => {
+  const id = request.params.id
+  const note = notes.find(note => note.id === id)
+  response.json(note)
+})
+```
+
+Now app.get('/api/notes/:**id**', ...) will handle all HTTP GET requests that are of the form /api/notes/**SOMETHING**, where SOMETHING is an arbitrary string.
+
+The id parameter in the route of a request can be accessed through the request object:
+
+```JavaScript
+const id = request.params.id
+```
+
+## Debugging tip
+
+If you're ever unsure what Express is receiving, add:
+
+```JavaScript
+console.log(request.params);
+```
+
+Then visit:
+
+```bash
+http://localhost:3001/api/persons/1
+```
+
+You’ll see something like:
+
+```JavaScript
+{ id: '1' }
+```
+
+Extract the id correctly from **request.params.id**
+
+## handle situation when no data is found
+
+If no note is found, the server should respond with the status code 404 not found instead of 200.
+
+```JavaScript
+app.get("/api/persons/:id", (request, response) => {
+  const id = request.params.id;
+  const person = persons.find((person) => person.id === id);
+  if (!person) {
+    return response.status(404).end();
+  }
+
+  response.json(person);
+});
+```
+
+This part handles the situation when there is no data.
+You could simplify the route slightly by returning early:
+
+```JavaScript
+  if (!person) {
+    return response.status(404).end();
+  }
+
+  response.json(person);
+```
+
+Since no data is attached to the response, we use the status method for setting the [status](https://expressjs.com/en/4x/api.html#res.status) and the end method for responding to the request without sending any data.
+
+# Deleting resources
+
+Let's implement a route for deleting resources.
+Deletion happens by making an HTTP DELETE request to the URL of the resource:
+
+```JavaScript
+app.delete("/api/persons/:id", (request, response) => {
+  const id = request.params.id;
+
+  const person = persons.find((person) => person.id === id);
+  if (!person) {
+    return response.status(404).end();
+  }
+
+  const filteredPersons = persons.filter((person) => person.id !== id);
+  persons = filteredPersons;
+  response.status(204).end();
+});
+```
+
+If deleting the resource is successful, meaning that the note exists and is removed, we **respond to the request with the status code 204 no content** and return no data with the response.
+
+There's no consensus on what status code should be returned to a DELETE request if the resource does not exist. _The only two options are 204 and 404._ For the sake of simplicity, our application will respond with **204** in both cases.
+
+# Postman
+
+Install the Postman desktop client and try it out.
+
+Postman is also available on VS Code which can be downloaded from the
+
+- Extension tab on the left -> search for Postman -> First result (Verified Publisher) -> Install [Link](https://marketplace.visualstudio.com/items?itemName=Postman.postman-for-vscode)
+
+You will then see an extra icon added on the activity bar below the extensions tab. Once you log in, you can follow the steps below
+
+# The Visual Studio Code REST client
+
+Install this extension in Visual Studio Code [REST client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
+
+🚀 How to Use
+
+- Save the file with a .http or .rest extension
+
+- Start your server: Make sure your backend is running on port 3001
+
+- Click "Send Request" above each request, or use Ctrl+Alt+R
+
+- View responses in the side panel that opens
+
+```bash
+### Get root endpoint
+Send Request
+GET http://localhost:3001/
+
+### Get all persons
+Send Request
+GET http://localhost:3001/api/persons
+
+### Get info page
+Send Request
+GET http://localhost:3001/info
+
+### Get person with ID 1
+Send Request
+GET http://localhost:3001/api/persons/1
+
+### Get person with ID 10 (likely non-existent)
+Send Request
+GET http://localhost:3001/api/persons/10
+```
+
 # Run as a script or as a development
 
 - Run as a script with 'npm start'
