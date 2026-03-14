@@ -732,6 +732,150 @@ Send Request
 GET http://localhost:3001/api/persons/10
 ```
 
+# About HTTP request types
+
+## Safety (Safe requests):
+
+A safe request should not change anything on the server (no side effects like modifying a database).
+
+GET and HEAD requests are intended to be safe.
+
+GET retrieves data that already exists.
+
+HEAD works like GET but returns only the status code and headers, no response body.
+
+Safety is a recommendation in the HTTP standard, not something guaranteed.
+
+## Idempotency (Idempotent requests):
+
+A request is idempotent if sending it multiple times produces the same result as sending it once.
+
+GET, HEAD, PUT, and DELETE should be idempotent.
+
+Example: Sending the same PUT request multiple times updates the resource to the same final state.
+
+### POST requests:
+
+**_POST is neither safe nor idempotent._**
+
+Sending the same POST request multiple times can create multiple new resources.
+
+✅ Key idea:
+
+**_Safe:_** No server state change.
+
+**_Idempotent:_** Repeating the request doesn’t change the final result.
+
+**_POST:_** Only method that is **_not safe and not idempotent._**
+
+# Middleware
+
+## What is Middleware?
+
+Middleware are **functions that handle request and response objects** in an Express server.
+
+## JSON Parser Middleware
+
+- Takes **raw data from requests**.
+- **Parses it into a JavaScript object**.
+- Stores the result in **`request.body`**.
+
+## Execution Order
+
+- Multiple middlewares can be used in an application.
+- They run **in the order they are declared in the code**.
+
+## Middleware Function Structure
+
+Middleware functions receive **three parameters**:
+
+- `request`
+- `response`
+- `next`
+
+`next()` is called to **pass control to the next middleware**.
+
+Example:
+
+```javascript
+const requestLogger = (request, response, next) => {
+  console.log("Method:", request.method);
+  console.log("Path:", request.path);
+  console.log("Body:", request.body);
+  console.log("---");
+  next();
+};
+```
+
+# Morgan middleware
+
+[npm](https://www.npmjs.com/package/morgan)
+[github](https://github.com/expressjs/morgan)
+
+**_HTTP request logger middleware for node.js_**
+
+## Installation
+
+This is a Node.js module available through the npm registry. Installation is done using the npm install command:
+
+```bash
+ npm install morgan
+```
+
+## Hot to import
+
+- API
+
+```JavaSript
+const morgan = require('morgan')
+```
+
+### morgan(format, options)
+
+Create a new morgan logger middleware function using the given format and options. The format argument may be a string of a predefined name (see below for the names), a string of a format string, or a function that will produce a log entry.
+
+The format function will be called with three arguments tokens, req, and res, where tokens is an object with all defined tokens, req is the HTTP request and res is the HTTP response. The function is expected to return a string that will be the log line, or undefined / null to skip logging.
+
+#### Using a predefined format string
+
+```JavaScript
+app.use(morgan('tiny'))
+```
+
+Then you will see in the console the tiny format that morgan gives to the log
+
+#### Using format string of predefined tokens
+
+```JavaScript
+morgan(':method :url :status :res[content-length] - :response-time ms')
+```
+
+### Using a custom format function
+
+```JavaScript
+morgan(function (tokens, req, res) {
+  return [
+    tokens.method(req, res),
+    tokens.url(req, res),
+    tokens.status(req, res),
+    tokens.res(req, res, 'content-length'), '-',
+    tokens['response-time'](req, res), 'ms'
+  ].join(' ')
+})
+```
+
+# ⭐ Clean Structure Example (conceptually)
+
+Your file should look like:
+
+```bash
+imports
+app initialization
+middleware
+routes
+app.listen
+```
+
 # Run as a script or as a development
 
 - Run as a script with 'npm start'

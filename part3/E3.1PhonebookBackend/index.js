@@ -1,21 +1,24 @@
+//imports
 const express = require("express");
-const app = express();
-const PORT = 3001;
+const morgan = require("morgan");
 let persons = require("./persons");
 const utils = require("./utils/helpers");
 
+//app initialization
+const app = express();
+const PORT = 3001;
+
+//middleware
+app.use(morgan("tiny"));
 app.use(express.json()); //json-parser
 
+//routes-----------------------------
 app.get("/", (request, response) => {
   response.send("<h1>Hello World!</h1>");
 });
 
 app.get("/api/persons", (request, response) => {
   response.json(persons);
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
 
 app.get("/info", (request, response) => {
@@ -46,6 +49,12 @@ app.delete("/api/persons/:id", (request, response) => {
   response.status(204).end();
 });
 
+const getRandomInt = (min, max) => {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
 app.post("/api/persons", (request, response) => {
   if (!request.body?.name || !request.body?.number) {
     return response.status(400).json({ error: "Name or number missing" });
@@ -59,12 +68,6 @@ app.post("/api/persons", (request, response) => {
     return response.status(400).json({ error: "Name must be unique" });
   }
 
-  const getRandomInt = (min, max) => {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  };
-
   const maxId = getRandomInt(100, 10000);
 
   // There is no mutation of the data
@@ -77,4 +80,9 @@ app.post("/api/persons", (request, response) => {
   persons = [...persons, newPerson];
 
   response.json(newPerson);
+});
+
+//app.listen
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
