@@ -9,8 +9,18 @@ const app = express();
 const PORT = 3001;
 
 //middleware
-app.use(morgan("tiny"));
 app.use(express.json()); //json-parser
+
+morgan.token("body", (req) => {
+  if (req.method === "POST") {
+    return JSON.stringify(req.body);
+  }
+  return "";
+});
+
+app.use(
+  morgan(":method :url :status :res[content-length] :response-time ms :body"),
+);
 
 //routes-----------------------------
 app.get("/", (request, response) => {

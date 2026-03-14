@@ -844,10 +844,38 @@ app.use(morgan('tiny'))
 
 Then you will see in the console the tiny format that morgan gives to the log
 
-#### Using format string of predefined tokens
+#### Using a format string of predefined tokens
 
-```JavaScript
-morgan(':method :url :status :res[content-length] - :response-time ms')
+```javascript
+morgan(":method :url :status :res[content-length] - :response-time ms");
+```
+
+Morgan provides predefined tokens such as:
+
+- `:method`
+- `:url`
+- `:status`
+- `:res[content-length]`
+- `:response-time`
+
+#### Custom Morgan tokens
+
+You can define custom tokens using `morgan.token()` and then use them
+inside the format string.
+
+Example:
+
+```javascript
+morgan.token("body", (req) => {
+  if (req.method === "POST") {
+    return JSON.stringify(req.body);
+  }
+  return "";
+});
+
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms :body"),
+);
 ```
 
 ### Using a custom format function
@@ -863,6 +891,8 @@ morgan(function (tokens, req, res) {
   ].join(' ')
 })
 ```
+
+Note that logging data even in the console can be dangerous since it can contain sensitive data and may violate local privacy law (e.g. GDPR in EU) or business-standard. In this exercise, you don't have to worry about privacy issues, but in practice, try not to log any sensitive data.
 
 # ⭐ Clean Structure Example (conceptually)
 
