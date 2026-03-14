@@ -47,6 +47,18 @@ app.delete("/api/persons/:id", (request, response) => {
 });
 
 app.post("/api/persons", (request, response) => {
+  if (!request.body?.name || !request.body?.number) {
+    return response.status(400).json({ error: "Name or number missing" });
+  }
+
+  if (
+    persons.find(
+      (person) => person.name.toLowerCase() === request.body.name.toLowerCase(),
+    )
+  ) {
+    return response.status(400).json({ error: "Name must be unique" });
+  }
+
   const getRandomInt = (min, max) => {
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -55,7 +67,7 @@ app.post("/api/persons", (request, response) => {
 
   const maxId = getRandomInt(100, 10000);
 
-  // Like this there is no mutation
+  // There is no mutation of the data
   const newPerson = {
     id: String(maxId),
     name: request.body.name,
