@@ -925,3 +925,1200 @@ PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> npm run dev
 
 Server running on port 3001
 ```
+
+# Deploying app to internet
+
+Let's connect the frontend to the backend.
+
+## Same-Origin Policy and CORS
+
+## Overview
+
+Modern browsers enforce a security rule called the Same-Origin Policy (SOP) to protect users from malicious websites accessing sensitive data from other domains.
+
+When building web applications with separate frontend and backend servers, this policy often blocks requests between them unless Cross-Origin Resource Sharing (CORS) is configured correctly.
+
+This section explains:
+
+- What an origin is
+
+- How Same-Origin Policy works
+
+- Why CORS errors occur
+
+- How to enable CORS in a Node.js backend
+
+# What is an Origin?
+
+An origin is defined by the combination of three components:
+
+| Component | Example                  |
+| --------- | ------------------------ |
+| Protocol  | `http` / `https`         |
+| Hostname  | `example.com`            |
+| Port      | `80`, `443`, `5173`, etc |
+
+Example URL:
+
+```bash
+http://example.com:80/index.html
+```
+
+Origin breakdown:
+
+```bash
+Protocol: http
+Host: example.com
+Port: 80
+```
+
+If **any of these three values differ**, the origin is considered different.
+
+## Same-Origin Policy
+
+The **Same-Origin Policy** prevents scripts on one website from interacting with resources from another origin.
+
+**Example**
+
+```bash
+Frontend: http://localhost:5173
+Backend:  http://localhost:3001
+```
+
+Even though both run on `localhost`, they have **different ports**, which means **different origins.**
+
+As a result, browsers will **block API requests** from the frontend to the backend unless the server explicitly allows it.
+
+## Request Flow (Without CORS)
+
+```mermaid
+SequenceDiagram
+participant Browser
+participant Frontend
+participant Backend
+
+Browser->>Frontend: Load application
+Frontend->>Backend: API request (different origin)
+Backend-->>Frontend: Response
+Browser-->>Frontend: Block response (CORS error)
+```
+
+The browser blocks the response because the backend **did not allow cross-origin access.**
+
+## Cross-Origin Resource Sharing (CORS)
+
+**CORS** is a mechanism that allows servers to specify which external origins are permitted to access their resources.
+
+This is done through HTTP response headers.
+
+Important header:
+
+```
+Access-Control-Allow-Origin
+```
+
+Possible values:
+
+| Value                | Meaning                                    |
+| -------------------- | ------------------------------------------ |
+| `*`                  | Allow requests from any origin             |
+| `http://example.com` | Allow requests only from a specific origin |
+
+## Request Flow (With CORS Enabled)
+
+```mermaid
+sequenceDiagram
+participant Browser
+participant Frontend
+participant Backend
+
+Browser->>Frontend: Load application
+Frontend->>Backend: API request
+Backend-->>Frontend: Response + CORS headers
+Browser->>Frontend: Allow response
+```
+
+Because the backend includes the correct CORS headers, the browser allows the response.
+
+## Enabling CORS in Node.js (Express)
+
+### 1. Install the CORS middleware
+
+```bash
+npm install cors
+```
+
+### 2. Enable CORS globally
+
+```JavaScript
+const cors = require('cors')
+
+app.use(cors())
+```
+
+This allows requests from **all origins.**
+
+## Restricting CORS to Specific Origins (Recommended)
+
+In production environments, it is safer to allow only trusted origins.
+
+Example configuration:
+
+```JavaScript
+const cors = require('cors')
+
+app.use(
+  cors({
+    origin: 'http://localhost:5173'
+  })
+)
+```
+
+This configuration allows requests **only from the specified frontend application.**
+
+**Key Takeaways**
+
+- **Same-Origin Policy** protects users by blocking cross-origin requests.
+
+- Different **protocol, host, or port** means a different origin.
+
+- **CORS** allows servers to explicitly permit cross-origin requests.
+
+- In **Node.js/Express**, the cors middleware is the easiest way to enable it.
+
+- In **production**, restrict CORS to specific trusted origins.
+
+# Frontend–Backend Integration
+
+At this stage, most features in the frontend are functional. The React application successfully communicates with the backend API and retrieves notes.
+
+One feature is still incomplete:
+
+- **Changing the importance of notes**
+
+The backend endpoint responsible for updating note importance has not yet been implemented. As a result, this functionality is currently unavailable in the frontend and will be implemented later.
+
+## Application Architecture
+
+The application follows a client–server architecture:
+
+- The **React frontend** runs in the browser.
+
+- The **Node.js / Express backend** runs locally on a separate port.
+
+- The frontend communicates with the backend through HTTP requests.
+
+### Architecture Diagram
+
+flowchart LR
+
+```mermaid
+flowchart LR
+User --> Browser
+Browser --> ReactApp[React Application]
+ReactApp -->|HTTP Requests| BackendAPI[Node.js / Express API]
+BackendAPI --> Database[(Data Source)]
+BackendAPI -->|JSON Response| ReactApp
+ReactApp --> Browser
+```
+
+### Development Environment
+
+```bash
+Frontend: http://localhost:5173
+Backend:  http://localhost:3001
+```
+
+Because these services run on **different ports**, the browser treats them as **different origins**, which is why **CORS must be enabled** on the backend.
+
+For more information about CORS, see the documentation from the
+Mozilla Developer Network.
+
+### Deploying the Application
+
+Once the full stack is working locally, the next step is to **deploy the application to the internet** so it can be accessed publicly.
+
+There are many services that allow developers to host applications online. Many of these platforms are **PaaS (Platform as a Service)** providers.
+
+PaaS platforms typically handle:
+
+- Server infrastructure
+- Runtime environments (such as Node.js)
+- Scaling and networking
+- Optional services like databases
+
+This allows developers to focus on building the application rather than managing infrastructure.
+
+### Hosting Platforms
+
+Several services can host Node.js applications. Some popular options include:
+
+#### Render
+
+Render offers a free compute tier, making it a good choice for learning and small projects.
+It also provides a simple deployment process and does not require additional local installations.
+
+#### Fly.io
+
+Fly.io offers more flexibility and advanced deployment features. However, it has recently moved toward a paid pricing model.
+
+### Other Platforms
+
+Some developers also use:
+
+- Replit
+- CodeSandbox
+
+These platforms allow you to run and share Node.js applications directly from the browser.
+
+### Configuring the Application Port
+
+When deploying to cloud platforms, the application cannot always use a **fixed port** like `3001`.
+
+Most hosting providers assign the port dynamically using an **environment variable.**
+
+To support this, update the server configuration in `index.js`:
+
+```JavaScript
+const PORT = process.env.PORT || 3001
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})
+```
+
+#### How This Works
+
+| Variable           | Purpose                                    |
+| ------------------ | ------------------------------------------ |
+| `process.env.PORT` | Port assigned by the hosting platform      |
+| `3001`             | Default port used during local development |
+
+This configuration ensures that:
+
+- The app works **locally during development**
+
+- The app works **correctly in cloud deployment environments**
+
+### Deployment Flow
+
+flowchart LR
+
+```mermaid
+flowchart LR
+
+Developer --> GitRepository[GitHub Repository]
+GitRepository --> HostingPlatform[Render / Fly.io]
+HostingPlatform --> BackendServer[Node.js API]
+User --> Browser
+Browser -->|HTTP Requests| BackendServer
+BackendServer -->|JSON Response| Browser
+Developer --> GitRepository[GitHub Repository]
+GitRepository --> HostingPlatform[Render / Fly.io]
+HostingPlatform --> BackendServer[Node.js API]
+User --> Browser
+Browser -->|HTTP Requests| BackendServer
+BackendServer -->|JSON Response| Browser
+```
+
+### Summary
+
+- The React frontend communicates with a **Node.js/Express backend API.**
+
+- During development, the frontend and backend run **on different ports.**
+
+- **CORS must be enabled** to allow cross-origin requests.
+
+- For deployment, the server must use a **dynamic port** provided by the hosting platform.
+
+- Platforms like **Render** and **Fly.io** simplify application deployment.
+
+# Deploying the Backend with Render
+
+This project can be deployed using Render, a cloud platform that allows you to host web services directly from a GitHub repository.
+
+⚠️ Note: In some cases, Render may require credit card verification to activate services, even when using the free tier.
+
+---
+
+## Prerequisites
+
+Before deploying, make sure that:
+
+- The backend code is pushed to a GitHub repository
+- The repository is **public**
+- The backend server runs correctly locally
+
+---
+
+### 1. Sign in to Render
+
+Sign in to Render using your GitHub account.
+
+Once logged in, open the **dashboard** and create a new service.
+
+**Dashboard → New → Web Service**
+
+### 2. Connect the GitHub Repository
+
+Render will prompt you to select a repository from your GitHub account.
+
+Steps:
+
+**1.** Select the backend repository
+
+**2.** Authorize Render to access the repository
+
+**3.** Confirm the connection
+
+Note: In some cases, the repository must be **public** for Render to access it.
+
+### 3. Configure the Web Service
+
+Next, configure the basic settings for the deployment.
+
+Typical configuration:
+
+| Setting       | Value           |
+| ------------- | --------------- |
+| Environment   | Node            |
+| Build Command | `npm install`   |
+| Start Command | `node index.js` |
+
+If your backend is located in a **subfolder of the repository**, specify the path in:
+
+```bash
+Root Directory
+```
+
+Otherwise, leave this field empty.
+
+### 4. Deploy the Application
+
+After configuration, click **Create Web Service**.
+
+Render will:
+
+**1.** Clone the repository
+
+**2.** Install dependencies
+
+**3.** Start the Node.js server
+
+Once deployment finishes, Render provides a **public URL** where the backend API is available.
+
+Example:
+
+```bash
+https://your-app-name.onrender.com
+```
+
+The dashboard displays:
+
+- Application status
+- Deployment history
+- Public service URL
+
+### Automatic Deployments
+
+By default, Render automatically redeploys the application whenever a new commit is pushed to the GitHub repository.
+
+However, automatic deployment may occasionally fail.
+
+In that case, the service can be redeployed manually.
+
+#### Manual Redeploy
+
+From the Render dashboard:
+
+```bash
+Deploy → Deploy latest commit
+```
+
+This forces the application to rebuild and restart using the most recent code.
+
+### Viewing Application Logs
+
+Render provides access to application logs directly in the dashboard.
+
+Logs are useful for debugging:
+
+- server startup
+- incoming requests
+- runtime errors
+
+Navigate to:
+
+```bash
+Dashboard → Logs
+```
+
+Typical log output may look like:
+
+```bash
+Server running on port 10000
+```
+
+This indicates that the hosting environment assigned the application a **dynamic port**.
+
+### Configuring the Server Port
+
+Cloud hosting platforms assign ports dynamically using environment variables.
+
+To support this, the backend server must use the following configuration:
+
+```javascript
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+**How It Works**
+
+| Variable           | Purpose                                  |
+| ------------------ | ---------------------------------------- |
+| `process.env.PORT` | Port assigned by the hosting environment |
+| `3001`             | Default port for local development       |
+
+This configuration ensures that:
+
+- The application runs locally during development
+- The application runs correctly when deployed to Render
+
+### Deployment Architecture
+
+```mermaid
+flowchart LR
+
+Developer --> GitHubRepo[GitHub Repository]
+GitHubRepo --> RenderDeploy[Render Deployment]
+RenderDeploy --> BackendAPI[Node.js / Express Backend]
+User --> Browser
+Browser -->|HTTP Requests| BackendAPI
+BackendAPI -->|JSON Response| Browser
+```
+
+- Render deploys applications directly from a GitHub repository
+- Every commit can trigger an automatic redeployment
+- Logs can be viewed from the Render dashboard
+- The server must use process.env.PORT for compatibility with cloud environments
+
+# Frontend Production Build
+
+So far the React application has been running in **development mode**.  
+Development mode provides helpful features such as:
+
+- detailed error messages
+- fast refresh when code changes
+- debugging tools
+
+However, development mode is **not optimized for deployment**. Before deploying the application, we must create a **production build**.
+
+---
+
+## Creating the Production Build
+
+For applications created with **Vite**, a production build can be generated with the following command:
+
+```bash
+npm run build
+```
+
+Run this command from the **root directory of the frontend project.**
+
+After running the build command, Vite creates a new directory:
+
+```bash
+dist/
+```
+
+This directory contains the optimized version of the application.
+
+## JavaScript Bundling and Minification
+
+During the build process:
+
+- All application JavaScript files are **bundled together**
+- Dependencies are **included in the bundle**
+- The code is **minified and optimized**
+
+Even if the project originally contains multiple JavaScript files, the build process typically generates **one optimized JavaScript bundle.**
+
+Minification removes:
+
+- whitespace
+- comments
+- long variable names
+
+This reduces the **file size** and improves **application performance.**
+
+Example of minified code:
+
+```javascript
+!function(e){function r(r){for(var n,f,i=r[0],l=r[1],a=r[2],c=0,s=[];c<i.length;c++)f=i[c],o[f]&&s.push(o[f][0]),o[f]=0;for(n in l)Object.prototype.hasOwnProperty.call(l,n)&&(e[n]=l[n]);
+```
+
+Minified code is intentionally **hard to read** but significantly **smaller and faster** to load in the browser.
+
+# Serving Static Files from the Backend
+
+One common way to deploy a full-stack application is to **serve the frontend build directly from the backend**.  
+This means the backend will handle:
+
+- API requests
+- Serving the frontend application
+
+---
+
+### 1. Copy the Frontend Production Build
+
+After creating the frontend production build (`dist` folder), copy it into the backend project.
+
+From the **frontend project directory**, run:
+
+```bash
+cp -r dist ../backend
+```
+
+If you are using Windows, you can use:
+
+```bash
+copy
+```
+
+or
+
+```bash
+xcopy
+```
+
+Alternatively, you can simply **copy and paste the `dist` folder** into the backend directory.
+
+#### Backend Project Structure
+
+After copying the build, the backend project should look like this:
+
+```bash
+backend/
+│
+├── dist/
+│   ├── index.html
+│   └── assets/
+│
+├── index.js
+├── package.json
+```
+
+### 2. Configure Express to Serve Static Files
+
+Express includes a built-in middleware for serving static files.
+
+Add the following line in your backend configuration (usually in index.js):
+
+```javascript
+app.use(express.static("dist"));
+```
+
+This middleware tells Express to serve files from the `dist` directory.
+
+**How It Works**
+
+When the server receives a **GET request**, Express will:
+
+1. Check if the requested file exists inside dist
+2. If it exists → return the file
+3. Otherwise → continue processing other routes (such as API endpoints)
+
+**Example Routes**
+| Request | Handled By |
+| ------------- | --------------------- |
+| `/` | React frontend |
+| `/index.html` | React frontend |
+| `/assets/...` | React frontend assets |
+| `/api/notes` | Backend API |
+
+### 3. Use Relative API URLs in the Frontend
+
+Since the frontend and backend now run from **the same server**, the frontend can use **relative URLs**.
+
+Example service file:
+
+```JavaScript
+import axios from 'axios'
+
+const baseUrl = '/api/notes'
+
+const getAll = () => {
+  const request = axios.get(baseUrl)
+  return request.then(response => response.data)
+}
+```
+
+This removes the need to specify:
+
+```bash
+http://localhost:3001
+```
+
+### 4. Rebuild the Frontend
+
+After updating the frontend code, you must:
+
+- Build the frontend again
+- Copy the new dist folder to the backend
+
+```bash
+npm run build
+```
+
+Then copy the updated dist folder to the backend directory.
+
+#### Running the Application
+
+Start the backend server:
+
+```bash
+node index.js
+```
+
+The full application is now available at:
+
+```bash
+http://localhost:3001
+```
+
+### What Happens When the App Loads
+
+- The browser navigates to:
+
+```bash
+http://localhost:3001
+```
+
+- The server returns:
+
+```bash
+dist/index.html
+```
+
+Example structure of the HTML file:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script type="module" src="/assets/index.js"></script>
+    <link rel="stylesheet" href="/assets/index.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+```
+
+This file instructs the browser to load:
+
+- the CSS styles
+- the JavaScript bundle containing the React application
+
+#### Application Request Flow
+
+```mermaid
+flowchart LR
+
+Browser -->|GET /| ExpressServer
+ExpressServer -->|returns index.html| Browser
+
+Browser -->|GET /assets/index.js| ExpressServer
+ExpressServer -->|returns JS bundle| Browser
+
+Browser -->|GET /api/notes| ExpressServer
+ExpressServer -->|returns JSON data| Browser
+```
+
+### Final Deployment Architecture
+
+In production, both frontend and backend run inside the **same Node.js server.**
+
+```mermaid
+flowchart LR
+
+User --> Browser
+Browser --> NodeServer[Node.js / Express Server]
+NodeServer --> ReactBuild[Static React Build]
+NodeServer --> API[/api/notes endpoint/]
+```
+
+Workflow:
+
+1. Browser loads index.html
+2. Browser downloads the React production bundle
+3. React application starts
+4. React fetches data from:
+
+```bash
+/api/notes
+```
+
+The backend returns JSON data, and React renders the notes in the UI.
+
+# Deploying the Full Application
+
+After confirming that the **production version works locally**, the next step is to deploy the entire application to the internet.
+
+This deployment includes:
+
+- the **Node.js / Express backend**
+- the **React production build (`dist`)**
+- the **API endpoints**
+
+---
+
+### 1. Push the Project to GitHub
+
+Commit the latest changes and push them to your repository on GitHub.
+
+```bash
+git add .
+git commit -m "Prepare production build"
+git push
+```
+
+⚠️ **Important:** Ensure that the dist directory is not ignored in the backend .gitignore file.
+
+If `dist` is ignored, remove it from `.gitignore`.
+
+Example `.gitignore` (backend):
+
+```bash
+node_modules
+.env
+```
+
+### 2. Deploy with Render
+
+Once the changes are pushed to GitHub, the hosting service will deploy the application.
+
+Typical workflow with Render:
+
+1. Render detects a new commit
+2. Render pulls the latest code
+3. Dependencies are installed
+4. The Node.js server starts
+
+If automatic deployment does not trigger, you can redeploy manually.
+
+**Manual Deployment**
+
+From the Render dashboard:
+
+```bash
+Deploy → Deploy latest commit
+```
+
+### 3. Access the Deployed Application
+
+After deployment finishes, the application will be available at a public URL.
+
+Example:
+
+```bash
+https://your-app-name.onrender.com
+```
+
+When visiting this URL:
+
+1. The server returns index.html from the dist directory
+2. The browser loads the React production bundle
+3. The React application starts
+4. React fetches data from the backend API
+
+**Current Application Status**
+
+The application works correctly, except for one missing feature changing the importance of a note is not implemented yet.
+
+The backend currently does not contain the endpoint required to update the importance field. This functionality will be added later.
+
+**Data Persistence**
+
+At the moment, notes are stored in a **temporary in-memory** variable inside the backend server.
+
+Example:
+
+```javascript
+let notes = [];
+```
+
+This means:
+
+- If the server restarts
+- If the application crashes
+- If the hosting platform redeploys
+
+All stored notes will be lost.
+
+To solve this, the application will later be connected to a **database.**
+
+### Production Architecture
+
+After deployment, the system architecture looks like this:
+
+```mermaid
+flowchart LR
+
+User --> Browser
+Browser -->|GET /| RenderServer[Render Server]
+
+RenderServer -->|index.html| Browser
+Browser -->|load React app| RenderServer
+
+Browser -->|GET /api/notes| RenderServer
+RenderServer -->|JSON data| Browser
+```
+
+**Application Flow**
+
+- The user navigates to the deployed URL.
+- The server returns the React frontend (index.html).
+- The browser loads the JavaScript bundle.
+- The React application starts.
+  React requests data from:
+
+```bash
+/api/notes
+```
+
+- The backend returns the JSON data.
+- The frontend renders the notes.
+
+**Deployment Summary**
+
+- The frontend build (dist) is served by the backend.
+- The backend runs on a cloud server (Render).
+- The React application communicates with the backend via REST API endpoints.
+- Data is currently stored in memory, so it is not persistent.
+- A database will be introduced later to store notes permanently.
+
+# Streamlining Frontend Deployment
+
+To simplify the deployment workflow, we can automate the process of **building the frontend and copying it to the backend**.
+
+This avoids manually running multiple commands every time the frontend changes.
+
+The automation can be done by adding **npm scripts** to the backend `package.json`.
+
+---
+
+## Important (Render Deployment)
+
+When deploying to Render, it is recommended to:
+
+- Keep the **backend in a separate GitHub repository**
+- Deploy that **backend repository directly through Render**
+
+Attempting to deploy directly from a larger course repository (for example a Fullstackopen monorepo) may cause errors such as: `ERR path ... package.json`
+
+## Backend `package.json` Scripts
+
+Add the following scripts to the backend `package.json`, in case of Render, the scripts look like the following
+
+```json
+{
+  "scripts": {
+    "build:ui": "rm -rf dist && cd ../frontend && npm run build && cp -r dist ../backend",
+    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push"
+  }
+}
+```
+
+## Script Explanation
+
+`build:ui`
+
+```bash
+npm run build:ui
+```
+
+This script:
+
+1. Removes the old production build
+2. Moves to the frontend directory
+3. Builds the frontend
+4. Copies the new dist folder into the backend
+
+Steps executed internally:
+
+```bash
+rm -rf dist
+cd ../frontend
+npm run build
+cp -r dist ../backend
+```
+
+`deploy:full`
+
+```bash
+npm run deploy:full
+```
+
+This script performs the **full deployment workflow**:
+
+1. Builds the frontend
+2. Copies the production build to the backend
+3. Commits the changes
+4. Pushes the changes to GitHub
+
+Steps executed internally:
+
+```bash
+npm run build:ui
+git add .
+git commit -m uibuild
+git push
+```
+
+Once the code is pushed, Render will automatically **redeploy the application.**
+
+**Directory Structure Requirement**
+
+These scripts assume the following directory structure:
+
+```bash
+project/
+│
+├── frontend/
+│
+└── backend/
+```
+
+Example:
+
+```bash
+fullstack-project
+│
+├── frontend
+│   └── dist
+│
+└── backend
+    ├── index.js
+    └── package.json
+```
+
+If your directory structure is different, the paths in the scripts must be adjusted.
+
+**Windows Compatibility**
+
+On Windows, npm scripts run using **cmd.exe** by default.
+
+Commands such as:
+
+```bash
+rm
+cp
+```
+
+are **Bash commands** and may not work.
+
+To enable Bash scripts, set the default npm shell to **Git Bash**:
+
+```bash
+npm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"
+```
+
+**Alternative: Using `shx`**
+
+Another option is to install **shx**, which provides cross-platform shell commands.
+
+Install:
+
+```bash
+npm install shx
+```
+
+Then replace commands such as:
+
+```bash
+rm -rf dist
+cp -r dist ../backend
+```
+
+with their `shx` equivalents.
+
+**Deployment Workflow Summary**
+
+With these scripts, the deployment process becomes:
+
+```bash
+npm run deploy:full
+```
+
+Which automatically:
+
+1. Builds the React frontend
+2. Copies the build to the backend
+3. Commits the changes
+4. Pushes the update to GitHub
+5. Triggers a new deployment on Render
+
+# Proxy Configuration for Development
+
+After changing the frontend API URL to a **relative path**, the frontend may stop working in development mode.
+
+Example change:
+
+```javascript
+const baseUrl = "/api/notes";
+```
+
+## Problem in Development Mode
+
+When running the frontend with:
+
+```bash
+npm run dev
+```
+
+the development server runs at:
+
+```bash
+http://localhost:5173
+```
+
+Since the API URL is relative (`/api/notes`), the browser sends requests to:
+
+```bash
+http://localhost:5173/api/notes
+```
+
+However, the backend server actually runs at:
+
+```bash
+http://localhost:3001
+```
+
+As a result, the request fails and the browser shows errors such as:
+
+```bash
+404 Not Found
+```
+
+## Solution: Configure a Vite Proxy
+
+If the project was created with **Vite**, this problem can be solved by adding a **proxy configuration**.
+
+Update the `vite.config.js` file in the frontend project.
+
+```javascript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+## How the Proxy Works
+
+With this configuration:
+
+- Requests starting with `/api` are forwarded to the backend server.
+- Other requests are handled normally by the Vite development server.
+
+Example request flow:
+
+| Frontend Request                  | Forwarded To                      |
+| --------------------------------- | --------------------------------- |
+| `http://localhost:5173/api/notes` | `http://localhost:3001/api/notes` |
+| `http://localhost:5173/`          | handled by Vite dev server        |
+
+## Restart the Development Server
+
+After updating the configuration, restart the frontend server:
+
+```bash
+npm run dev
+```
+
+Now the frontend works correctly in **development mode**.
+
+## Removing CORS Middleware
+
+Because the development proxy makes requests appear as if they come from the same origin (`localhost:5173`), the backend no longer needs the **CORS middleware**.
+
+Remove CORS from the backend.
+
+**Remove the dependency**
+
+```bash
+npm remove cors
+```
+
+**Remove CORS from `index.js`**
+
+Delete code such as:
+
+```javascript
+const cors = require("cors");
+app.use(cors());
+```
+
+## Final Result
+
+The application now works correctly in both environments:
+
+| Mode        | Frontend         | Backend          |
+| ----------- | ---------------- | ---------------- |
+| Development | `localhost:5173` | `localhost:3001` |
+| Production  | Same server      | Same server      |
+
+## Development Architecture
+
+```mermaid
+flowchart LR
+
+Browser --> ViteDevServer[Frontend Dev Server :5173]
+ViteDevServer -->|proxy /api requests| BackendServer[Node.js API :3001]
+BackendServer --> Browser
+```
+
+## Production Architecture
+
+```mermaid
+flowchart LR
+
+Browser --> NodeServer[Node.js / Express Server]
+NodeServer --> ReactBuild[React Production Build]
+NodeServer --> API[/api/notes endpoint/]
+```
+
+In production:
+
+1. The backend serves the React build.
+2. The React application loads in the browser.
+3. API requests are sent directly to `/api/notes`.
+
+## Deployment Notes
+
+There are multiple strategies for deploying full-stack applications. In some cases, the frontend may be deployed as a **separate application**, which can simplify automated deployment pipelines.
+
+A **deployment pipeline** is an automated process that moves code from development to production through stages such as:
+
+- building
+- testing
+- quality checks
+- deployment
+
+Automated deployment pipelines are discussed later in the course.
