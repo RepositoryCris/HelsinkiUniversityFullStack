@@ -2315,3 +2315,187 @@ POST /api/persons/ 400 31 0.782 ms {"name":"Unique Test Person","number":"777777
 ```
 
 Finally **_backend and frontend are working well locally._**
+
+## 3.10 Phonebook backend step 10
+
+For both Fly.io and Render, we need to change the definition of the port our application uses at the bottom of the `index.js` file in the backend like so:
+
+### ✅ Step 1 — Change the logic of the backend port
+
+```javascript
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+### ✅ Step 2 — Create an account in Render
+
+Visit [Render](https://render.com/) site and create an account using your github account.
+
+### ✅ Step 3 — Create a new web service
+
+1. Go to `+New`
+2. Choose `web service`
+3. Go to `Public Git reporsitory`
+4. In Github copy the `https address of your public repository`
+5. Paste the `url` in Render
+6. Click on the `Connect` button
+7. Give it these:
+
+- Name: `Render The Phonebook App`
+- Environment: `Node`
+- Build command: `npm install`
+- Start command: `npm start`
+- Root Directory Optional: Paste the realtive path where the root of your project is in the field `Root Directory Optional` the value `part3/E3.1PhonebookBackend`
+
+NB: Where is the package.json? where is the index.js file? that is the Root directory that must be used.
+
+- Instance Type: `For hobby projects` with the value `Free`
+
+8. Click on `Deploy Web Service` ✅
+
+#### Deploy in Render `Your service is live 🎉`
+
+```bash
+2026-03-16T20:48:17.388997241Z ==> It looks like we don't have access to your repo, but we'll try to clone it anyway.
+2026-03-16T20:48:17.389061842Z ==> Cloning from https://github.com/RepositoryCris/HelsinkiUniversityFullStack
+2026-03-16T20:48:18.409840591Z ==> Checking out commit ff905e7902174ecc9a8700ff55753ccfb4534b93 in branch main
+2026-03-16T20:48:21.458865909Z ==> Using Node.js version 22.22.0 (default)
+2026-03-16T20:48:21.485128294Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2026-03-16T20:48:23.619794945Z ==> Running build command 'npm install'...
+2026-03-16T20:48:24.692379112Z
+2026-03-16T20:48:24.692402452Z added 74 packages, and audited 75 packages in 992ms
+2026-03-16T20:48:24.692414202Z
+2026-03-16T20:48:24.692458623Z 23 packages are looking for funding
+2026-03-16T20:48:24.692468133Z   run `npm fund` for details
+2026-03-16T20:48:24.69344679Z
+2026-03-16T20:48:24.693458461Z found 0 vulnerabilities
+2026-03-16T20:48:30.400844509Z ==> Uploading build...
+2026-03-16T20:48:34.861144489Z ==> Uploaded in 3.6s. Compression took 0.9s
+2026-03-16T20:48:34.875276373Z ==> Build successful 🎉
+2026-03-16T20:48:39.952705447Z ==> Deploying...
+2026-03-16T20:48:40.030576788Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-03-16T20:48:49.380131956Z ==> Running 'npm start'
+2026-03-16T20:48:50.372685119Z
+2026-03-16T20:48:50.37271202Z > e3.1phonebookbackend@1.0.0 start
+2026-03-16T20:48:50.37271617Z > node index.js
+2026-03-16T20:48:50.37271833Z
+2026-03-16T20:48:51.1822868Z Server running on port 3001
+2026-03-16T20:48:51.829680359Z HEAD / 200 21 4.085 ms -
+2026-03-16T20:49:24.310932564Z ==> New primary port detected: 3001. Restarting deploy to update network configuration...
+2026-03-16T20:49:24.397619726Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2026-03-16T20:49:35.232312824Z ==> Running 'npm start'
+2026-03-16T20:49:36.328250627Z
+2026-03-16T20:49:36.328284348Z > e3.1phonebookbackend@1.0.0 start
+2026-03-16T20:49:36.328291698Z > node index.js
+2026-03-16T20:49:36.328296548Z
+2026-03-16T20:49:37.322273049Z Server running on port 3001
+2026-03-16T20:49:37.957570563Z HEAD / 200 21 2.081 ms -
+2026-03-16T20:49:47.173650785Z ==> Your service is live 🎉
+2026-03-16T20:49:47.29664595Z GET / 200 21 0.621 ms -
+2026-03-16T20:49:47.309645675Z ==>
+2026-03-16T20:49:47.311757097Z ==> ///////////////////////////////////////////////////////////
+2026-03-16T20:49:47.313543102Z ==>
+2026-03-16T20:49:47.315821267Z ==> Available at your primary URL https://render-the-phonebook-app.onrender.com
+2026-03-16T20:49:47.318217574Z ==>
+2026-03-16T20:49:47.320123311Z ==> ///////////////////////////////////////////////////////////
+```
+
+### Visit the web page with Render
+
+- Visit the deployed app root in the internet `https://render-the-phonebook-app.onrender.com`
+
+- Also visit `https://render-the-phonebook-app.onrender.com/api/persons` the list of your app should be there
+
+- Test all your links with `Rest client` and `Postman`, all backend tests must work equal than local.
+
+#### Port Configuration
+
+| Computer      | Port | What it means      |
+| ------------- | ---- | ------------------ |
+| Your laptop   | 3001 | Your local backend |
+| Render server | 3001 | Cloud backend      |
+
+Even though both say 3001, they are on completely different machines. So they do not interfere with each other. Also if you run locally, it will not interfere with the app that lives in the cloud.
+
+#### Why you don’t see the port in the URL
+
+Your public URL is:
+
+```bash
+https://render-the-phonebook-app.onrender.com
+```
+
+You don’t see `:3001` because Render uses a **reverse proxy.**
+
+The process works like this:
+
+```bash
+Internet request
+↓
+Render proxy (port 80 / 443)
+↓
+Your Node server (port 3001 inside the container)
+```
+
+So externally:
+
+```bash
+https://render-the-phonebook-app.onrender.com
+```
+
+Internally:
+
+```bash
+Node server → port 3001
+```
+
+#### Why process.env.PORT is used
+
+Cloud platforms often assign a **dynamic port.**
+
+That’s why you wrote:
+
+```javascript
+const PORT = process.env.PORT || 3001;
+```
+
+This means:
+| Environment | Port used |
+| ----------------- | -------------------- |
+| Local development | 3001 |
+| Render production | whatever Render sets |
+
+This pattern is **standard for Node deployments.**
+
+## FINAL RESULT
+
+### Phonebook Backend API
+
+Backend REST API for the Phonebook application built during the Full Stack Open course.
+
+#### Live Application
+
+https://render-the-phonebook-app.onrender.com
+
+#### API Endpoint
+
+https://render-the-phonebook-app.onrender.com/api/persons
+
+#### Tech Stack
+
+Backend:
+
+- Node.js
+- Express
+- REST API
+
+Deployment:
+
+- Render
+
+Tools:
+
+- VS Code REST Client
+- Postman
