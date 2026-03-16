@@ -38,7 +38,7 @@ content-type: application/json
     "name": "Unique Test Person",
     "number": "7777777"
 }
-### Expected: 201 Created with new person object
+### Expected: 200 with new person object
 
 
 ### [ERROR] Post with missing name

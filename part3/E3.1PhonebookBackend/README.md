@@ -992,7 +992,7 @@ As a result, browsers will **block API requests** from the frontend to the backe
 ## Request Flow (Without CORS)
 
 ```mermaid
-SequenceDiagram
+sequenceDiagram
 participant Browser
 participant Frontend
 participant Backend
@@ -2122,3 +2122,196 @@ A **deployment pipeline** is an automated process that moves code from developme
 - deployment
 
 Automated deployment pipelines are discussed later in the course.
+
+---
+
+# Exercises
+
+## 3.9 Phonebook backend step 9
+
+### ✅ Step 1 — Copy the Part 2 frontend into the Part 3 project
+
+Your structure should become something like this:
+
+```bash
+part3-phonebook/
+│
+├── index.js          (your Express backend)
+├── package.json
+│
+└── frontend/         ← paste your React app here
+    ├── package.json
+    ├── src/
+    ├── public/
+```
+
+So the React app lives inside a folder called frontend.
+
+### ✅ Step 2 — Install frontend dependencies
+
+Go **inside the frontend** folder:
+
+```bash
+cd frontend
+npm install
+```
+
+### ✅ Step 3 — Open terminals
+
+#### Terminal 1 — Backend (Express)
+
+Go to your backend folder:
+
+```bash
+cd D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend
+```
+
+Run your backend:
+
+```bash
+npm run dev
+```
+
+Backend runs on:
+
+```bash
+http://localhost:3001
+```
+
+#### Terminal 2 — Frontend (Vite)
+
+Go to the frontend folder:
+
+```bash
+cd D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend\frontend
+```
+
+Run:
+
+```bash
+npm run dev
+```
+
+Vite will show something like:
+
+```bash
+VITE v7.3.1  ready in 1467 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+```
+
+Your React app runs on:
+
+```bash
+http://localhost:5173
+```
+
+### ✅ Step 4 — Has been blocked by CORS policy
+
+You will see this message in `
+http://localhost:5173/`
+
+![CORS policy message](./readme-images/image.png)
+
+### ✅ Step 5 — Enabling CORS in Node.js (Express)
+
+- Inside the backend terminal install the CORS middleware:
+
+```bash
+npm install cors
+```
+
+**Enable CORS globally**
+
+Go to the `index.js` backend file and add this:
+
+```bash
+const cors = require('cors')
+
+app.use(cors())
+```
+
+This allows requests from all origins.
+
+Now the file should look like this:
+
+```javascript
+//imports
+const express = require("express");
+const cors = require("cors"); //<--ADD CORS
+const morgan = require("morgan");
+let persons = require("./persons");
+const utils = require("./utils/helpers");
+
+//app initialization
+const app = express();
+const PORT = 3001;
+
+//middleware
+app.use(cors()); //<-- USE CORS
+app.use(express.json()); //json-parser
+```
+
+![Once installed the CORS policy message is not anymore](./readme-images/image-1.png)
+
+### ✅ Step 6 — Change the Base Url of frontend and test
+
+Go to services and `persons.js` file, change this:
+
+```javascript
+const baseUrl = "http://localhost:3001/persons";
+```
+
+to this:
+
+```javascript
+const baseUrl = "http://localhost:3001/api/persons";
+```
+
+save changes and reload the page in `http://localhost:5173/`
+
+![Frontend and Backend Connected](./readme-images/image-2.png)
+
+**_The react app running in the browser now fetches the data from node/express-server that runs in localhost:3001._**
+
+### ✅ Step 7 — Test GET and POST from the backend
+
+Run these tests with Postman or with Rest client:
+
+GET `http://localhost:3001/api/persons/`
+
+```bash
+### Get all persons
+GET {{baseUrl}}/api/persons
+# Expected: 200 JSON array
+```
+
+POST `http://localhost:3001/api/persons/`
+
+```bash
+### [SUCCESS] Post a valid new person
+POST {{baseUrl}}/api/persons/
+content-type: application/json
+
+{
+    "name": "Unique Test Person",
+    "number": "7777777"
+}
+### Expected: 200 with new person object
+```
+
+Now if you see the console in your backend:
+
+```bash
+Server running on port 3001
+GET /api/persons 200 231 6.016 ms -
+GET /api/persons 200 231 1.241 ms -
+GET /api/persons 200 231 0.532 ms -
+GET /api/persons 200 231 0.588 ms -
+POST /api/persons/ 200 60 1.252 ms {"name":"Unique Test Person","number":"7777777"}   #Status 200
+POST /api/persons/ 400 31 0.782 ms {"name":"Unique Test Person","number":"7777777"}   #Status 400
+```
+
+Finally **_backend and frontend are working well locally._**

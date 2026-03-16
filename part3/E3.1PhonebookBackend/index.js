@@ -1,5 +1,6 @@
 //imports
 const express = require("express");
+const cors = require("cors");
 const morgan = require("morgan");
 let persons = require("./persons");
 const utils = require("./utils/helpers");
@@ -9,6 +10,7 @@ const app = express();
 const PORT = 3001;
 
 //middleware
+app.use(cors());
 app.use(express.json()); //json-parser
 
 morgan.token("body", (req) => {
