@@ -1,6 +1,5 @@
 //imports
 const express = require("express");
-const cors = require("cors");
 const morgan = require("morgan");
 let persons = require("./persons");
 const utils = require("./utils/helpers");
@@ -10,7 +9,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 //middleware
-app.use(cors());
 app.use(express.static("dist"));
 app.use(express.json()); //json-parser
 

@@ -2747,6 +2747,13 @@ removed 2 packages, and audited 73 packages in 4s
 found 0 vulnerabilities
 ```
 
+Now remove the code from index.js
+
+```javascript
+const cors = require("cors");
+app.use(cors());
+```
+
 ## ✅ Result: App works in development and production mode
 
 After these steps, the application works in both environments:
