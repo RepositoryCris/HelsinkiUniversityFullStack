@@ -2754,6 +2754,51 @@ const cors = require("cors");
 app.use(cors());
 ```
 
+## Remember to update manually the last `dist` file
+
+Go to your frontend folder:
+
+```bash
+cd frontend
+```
+
+Rebuild the React production build:
+
+```bash
+npm run build
+```
+
+This creates a new dist folder.
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend\frontend> npm run build
+
+> e2-6thephonebook@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+✓ 83 modules transformed.
+dist/index.html                  0.40 kB │ gzip:  0.28 kB
+dist/assets/index-BqjD-XtX.js  234.79 kB │ gzip: 77.17 kB
+✓ built in 3.51s
+```
+
+Then copy/update/better(move) the `dist` in the backend root.
+
+Your structure should be:
+
+```bash
+E3.1PhonebookBackend
+│
+├── dist
+│   ├── index.html
+│   └── assets
+│
+├── index.js
+├── package.json
+└── frontend
+```
+
 ## ✅ Result: App works in development and production mode
 
 After these steps, the application works in both environments:
