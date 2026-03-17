@@ -2499,3 +2499,279 @@ Tools:
 
 - VS Code REST Client
 - Postman
+
+## 3.11 Full Stack Phonebook
+
+### ✅ Step 1 — Frontend production build
+
+When the application is deployed, we must create a production build or a version of the application that is optimized for production.
+
+- Go to your frontend file:
+
+```bash
+ D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend\frontend
+```
+
+- Create a production build with Vite like this:
+
+```bash
+npm run build
+```
+
+- The console will show this:
+
+```bash
+> e2-6thephonebook@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+✓ 83 modules transformed.
+dist/index.html                  0.40 kB │ gzip:  0.28 kB
+dist/assets/index-r5IK_d1V.js  234.81 kB │ gzip: 77.17 kB
+✓ built in 5.09s
+```
+
+The `dist` folder contains the optimized production build of the React application.
+
+- It must be placed in the backend root so that Express can serve it as static files.
+
+```bash
+backend root
+   index.js
+   dist/        ← where Express expects it
+```
+
+Now `dist` folder lives here in the root:
+
+```bash
+ D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend
+```
+
+### ✅ Step 2 — Show static content: Express middleware
+
+- In the file index.js add the middleware
+
+```
+app.use(express.static('dist'))
+```
+
+Now you are able to see the React app in `http://localhost:3001/`
+
+If you test this:
+
+```
+### ==================== GET REQUESTS ====================
+
+### Get root endpoint
+GET {{baseUrl}}
+# Expected: 200 HTML response
+```
+
+Now instead of "Hello world" you will see the index.html of React from build.
+
+```html
+### ==================== GET REQUESTS ==================== HTTP/1.1 200 OK
+X-Powered-By: Express Access-Control-Allow-Origin: * Accept-Ranges: bytes
+Cache-Control: public, max-age=0 Last-Modified: Mon, 16 Mar 2026 22:47:48 GMT
+ETag: W/"192-19cf8d5842f" Content-Type: text/html; charset=utf-8 Content-Length:
+402 Date: Mon, 16 Mar 2026 23:03:03 GMT Connection: close
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>e2-6thephonebook</title>
+    <script type="module" crossorigin src="/assets/index-r5IK_d1V.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+```
+
+### ✅ Step 3 — Use a relative API URL
+
+Actually the `persons.js` file in services of frontend look like this:
+
+```javascript
+import axios from "axios";
+
+const baseUrl = "http://localhost:3001/api/persons";
+```
+
+Because of the situation, both the frontend and the backend are at the same address, it is possible to declare baseUrl as a **_relative URL._**
+
+```javascript
+import axios from "axios";
+
+const baseUrl = "/api/persons";
+
+const getAll = () => {
+  const request = axios.get(baseUrl);
+  return request.then((response) => response.data);
+};
+
+// ...
+```
+
+With this change the frontend and backend only runs in `http://localhost:3001/`
+
+Because now:
+
+```bash
+Frontend → served by Express
+Backend → same domain
+```
+
+So requests go to the **same server.**
+
+Example:
+
+```bash
+http://localhost:3001
+```
+
+Frontend runs here, so:
+
+```bash
+/api/persons
+```
+
+automatically means:
+
+```bash
+http://localhost:3001/api/persons
+```
+
+### ✅ Step 4 — Ensure `dist` is not ignored by Git
+
+Make sure to clear `dist` from `.gitignore` file
+
+Check if this exists:
+
+```bash
+dist
+```
+
+If it does, remove it so that:
+
+```bash
+dist/
+```
+
+**_gets pushed to GitHub and Render can serve it._**
+
+### ✅ Step 5 — Proxy
+
+Changes on the frontend _have caused it to no longer work in development mode_ (when started with command npm run dev), as the connection to the backend does not work.
+
+This is due to changing the backend address to a relative URL:
+
+```bash
+const baseUrl = '/api/persons'
+```
+
+When running the frontend in development mode (`npm run dev`), the React app runs on `http://localhost:5173` while the backend runs on `http://localhost:3001`.
+
+Because we use a relative API path (`/api/persons`), requests would incorrectly go to `localhost:5173/api/persons`.
+
+To fix this, we configure a proxy in `vite.config.js` so that API requests are forwarded to the backend server.
+
+Actually `vite.config.js` in the frontend looks like this:
+
+```javascript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+});
+```
+
+Add this to `vite.config.js`
+
+```javascript
+server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    }
+  },
+```
+
+Now the `vite.config.js` is
+
+```javascript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+Now the frontend is also working correctly. It functions both in development mode and in production mode together with the server.
+
+### ✅ Step 6 — CORS is not needed anymore
+
+Since from the frontend's perspective all requests are made to http://localhost:5173, which is the single origin, there is no longer a need for the backend's cors middleware. Therefore, we can **remove references to the cors library** from the **backend's `index.js`** file and remove cors from the project's dependencies:
+
+```
+npm remove cors
+```
+
+The console
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> npm remove cors
+
+removed 2 packages, and audited 73 packages in 4s
+
+22 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+```
+
+## ✅ Result: App works in development and production mode
+
+After these steps, the application works in both environments:
+
+Development:
+
+- React dev server → http://localhost:5173
+- Backend API → http://localhost:3001
+
+Production:
+
+- Express server serves both the API and the React application from `dist`.
+
+### Application Architecture
+
+Development mode:
+
+```bash
+Browser → Vite Dev Server (5173) → Proxy → Express API (3001)
+```
+
+Production mode:
+
+```bash
+Browser → Express Server (3001)
+                 ├── React build (dist)
+                 └── API (/api/persons)
+```
