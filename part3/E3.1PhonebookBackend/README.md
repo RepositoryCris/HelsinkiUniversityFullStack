@@ -2827,3 +2827,292 @@ Browser → Express Server (3001)
                  ├── React build (dist)
                  └── API (/api/persons)
 ```
+
+---
+
+# Chrome dev tools
+
+Debugging is also possible with the Chrome developer console by starting your application with the command:
+
+```javascript
+node --inspect index.js
+```
+
+---
+
+# Exercise 3.12 – Command-line Database
+
+## Goal
+
+Create a **command-line application** that:
+
+- Connects to a cloud database using MongoDB Atlas
+- Uses Mongoose (ODM for MongoDB)
+- Allows:
+  - ➕ Adding a person to the phonebook
+  - 📄 Listing all persons
+
+## ✅ 1. Set up MongoDB Atlas
+
+### Steps:
+
+1. Go to https://www.mongodb.com/
+2. Create an account and a new project
+3. Create a **free cluster**
+   - Provider: `AWS`
+   - Region: `closest to your location`
+4. Create a database user:
+   - Username: `fullstack_db_user`
+   - Password: `(store securely)`
+5. Allow network access:
+   - IP: `0.0.0.0/0` (allow all)
+6. Get the **connection URI**:
+   - Click **Connect → Drivers → Node.js**
+
+Example URI:
+
+mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+
+## ✅ 2. Install Mongoose
+
+```bash
+npm install mongoose
+```
+
+## ✅ 3. Create `mongo.js`
+
+This is a **standalone script** (not part of the Express app).
+
+```javascript
+const mongoose = require("mongoose");
+
+if (process.argv.length < 3) {
+  console.log("give password as argument");
+  process.exit(1);
+}
+
+const password = process.argv[2];
+const name = process.argv[3];
+const number = process.argv[4];
+
+const url = `mongodb+srv://fullstack_db_user:${password}@cluster0.i0zdjs6.mongodb.net/phonebookApp?retryWrites=true&w=majority`;
+
+mongoose.set("strictQuery", false);
+
+mongoose.connect(url, { family: 4 });
+
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: String,
+});
+
+const Person = mongoose.model("Person", personSchema);
+
+//Case A: Only password → LIST ALL ENTRIES
+if (process.argv.length === 3) {
+  console.log("phonebook:");
+
+  Person.find({}).then((result) => {
+    result.forEach((person) => {
+      console.log(`${person.name} ${person.number}`);
+    });
+    mongoose.connection.close();
+  });
+}
+
+//Case B: Password + name + number → ADD ENTRY
+
+if (process.argv.length === 5) {
+  const person = new Person({
+    name: name,
+    number: number,
+  });
+
+  person.save().then((result) => {
+    console.log(`added ${name} number ${number} to phonebook`);
+    mongoose.connection.close();
+  });
+}
+```
+
+## ✅ 4. Configure the connection
+
+### Important: Add database name to URI
+
+```bash
+mongodb+srv://fullstack_db_user:${password}@cluster0.i0zdjs6.mongodb.net/phonebookApp?retryWrites=true&w=majority
+```
+
+### Key concept:
+
+- `/phonebookApp` → database name
+- If omitted → MongoDB uses default database (`test`)
+
+## ✅ 5. Define schema and model
+
+```js
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: String,
+});
+
+const Person = mongoose.model("Person", personSchema);
+```
+
+📌 Note:
+Model `Person` → collection `people` **(automatic pluralization)**
+
+## ✅ 6. Handle command-line arguments
+
+```javascript
+const password = process.argv[2];
+const name = process.argv[3];
+const number = process.argv[4];
+```
+
+## ✅ 7. Implement functionality
+
+📄 List all entries
+
+```javascript
+if (process.argv.length === 3) {
+  console.log("phonebook:");
+
+  Person.find({}).then((result) => {
+    result.forEach((person) => {
+      console.log(`${person.name} ${person.number}`);
+    });
+    mongoose.connection.close();
+  });
+}
+```
+
+➕ Add a new entry
+
+```javascript
+if (process.argv.length === 5) {
+  const person = new Person({
+    name: name,
+    number: number,
+  });
+
+  person.save().then(() => {
+    console.log(`added ${name} number ${number} to phonebook`);
+    mongoose.connection.close();
+  });
+}
+```
+
+## ✅ 8. Run the application
+
+Add entry
+
+```javascript
+node mongo.js yourpassword Anna 040-1234556
+```
+
+Add with spaces
+
+```javascript
+node mongo.js yourpassword "Arto Vihavainen" 045-1232456
+```
+
+List entries
+
+```javascript
+node mongo.js yourpassword
+```
+
+## ✅ 9. Verify in MongoDB Atlas
+
+- Go to **Browse Collections**
+
+- Select:
+
+```bash
+phonebookApp → people
+```
+
+Example document:
+
+```json
+{
+  "name": "Anna",
+  "number": "040-1234556"
+}
+```
+
+**Console**
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu
+phonebook:
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu Anna 040-1234556
+added Anna number 040-1234556 to phonebook
+phonebook:
+Anna 040-1234556
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu "Arto Vihavainen" 045-1232456
+added Arto Vihavainen number 045-1232456 to phonebook
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu
+phonebook:
+Anna 040-1234556
+Arto Vihavainen 045-1232456
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu "Ada Lovelace" 040-1231236
+added Ada Lovelace number 040-1231236 to phonebook
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu
+phonebook:
+Anna 040-1234556
+Arto Vihavainen 045-1232456
+Ada Lovelace 040-1231236
+```
+
+### Important Notes
+
+- Do NOT commit the password to GitHub
+
+- Always close connection inside .then()
+
+- Use quotes for names with spaces
+
+- Database is created automatically on first insert
+
+## ✅ Final Result
+
+The application:
+
+- Connects to MongoDB Atlas
+
+- Stores data in phonebookApp database
+
+- Adds entries via CLI
+
+- Lists all stored entries
+
+- Persists data across executions
+
+### Lessons Learned
+
+- How to connect a Node.js application to a cloud database (MongoDB Atlas)
+
+- How MongoDB connection URIs are structured and how to modify them
+
+- Importance of specifying a database name in the connection string
+
+**Basics of Mongoose:**
+
+- Defining schemas
+
+- Creating models
+
+- Saving and querying documents
+
+- Handling command-line arguments using process.argv
+
+- Managing asynchronous operations with .then()
+
+- Properly closing database connections to avoid hanging processes
+
+- Understanding how MongoDB automatically creates databases and collections
+
+- Debugging by verifying data both in the console and in the database UI
