@@ -48,3 +48,7 @@ if (process.argv.length === 5) {
     mongoose.connection.close();
   });
 }
+
+//RUN
+//node mongo.js password
+//node mongo.js password "Arto Vihavainen" 045-1232456

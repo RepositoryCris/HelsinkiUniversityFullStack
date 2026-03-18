@@ -15,7 +15,11 @@ GET {{baseUrl}}/info
 # Expected: 200 HTML
 
 ### Get person with ID 1 (if exists)
-GET {{baseUrl}}/api/persons/1
+###GET {{baseUrl}}/api/persons/1
+# Expected: 200 JSON or 404 if doesn't exist
+
+### Get person with ID From Mongo DB (if exists)
+GET {{baseUrl}}/api/persons/69ba020a11a37853cfc836e2
 # Expected: 200 JSON or 404 if doesn't exist
 
 ### Get person with non-existent ID

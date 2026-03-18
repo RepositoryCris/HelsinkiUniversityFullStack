@@ -1,8 +1,8 @@
 //imports
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
-let persons = require("./persons");
-const utils = require("./utils/helpers");
+const Person = require("./models/person");
 
 //app initialization
 const app = express();
@@ -28,24 +28,25 @@ app.get("/", (request, response) => {
   response.send("<h1>Hello World!</h1>");
 });
 
-app.get("/api/persons", (request, response) => {
-  response.json(persons);
+app.get("/api/persons", (req, res) => {
+  Person.find({}).then((persons) => res.json(persons));
 });
 
+/*
 app.get("/info", (request, response) => {
   response.send(utils.getInfoMessage(persons));
 });
+*/
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  const person = persons.find((person) => person.id === id);
-  if (!person) {
-    return response.status(404).end();
-  }
-
-  response.json(person);
+  Person.findById(request.params.id).then((person) => {
+    if (!person) {
+      return response.status(404).end();
+    }
+    response.json(person);
+  });
 });
-
+/*
 app.delete("/api/persons/:id", (request, response) => {
   const id = request.params.id;
 
@@ -59,38 +60,30 @@ app.delete("/api/persons/:id", (request, response) => {
   console.log(`Person with id ${id} deleted successfully`);
   response.status(204).end();
 });
-
-const getRandomInt = (min, max) => {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
+*/
 app.post("/api/persons", (request, response) => {
-  if (!request.body?.name || !request.body?.number) {
+  const body = request.body;
+
+  if (!body?.name || !body?.number) {
     return response.status(400).json({ error: "Name or number missing" });
   }
-
+  /*
   if (
     persons.find(
-      (person) => person.name.toLowerCase() === request.body.name.toLowerCase(),
+      (person) => person.name.toLowerCase() === body.name.toLowerCase(),
     )
   ) {
     return response.status(400).json({ error: "Name must be unique" });
   }
+  */
+  const newPerson = new Person({
+    name: body.name,
+    number: body.number,
+  });
 
-  const maxId = getRandomInt(100, 10000);
-
-  // There is no mutation of the data
-  const newPerson = {
-    id: String(maxId),
-    name: request.body.name,
-    number: String(request.body.number),
-  };
-
-  persons = [...persons, newPerson];
-
-  response.json(newPerson);
+  newPerson.save().then((savedPerson) => {
+    response.json(savedPerson);
+  });
 });
 
 //app.listen

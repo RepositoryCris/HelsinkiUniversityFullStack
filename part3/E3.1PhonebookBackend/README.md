@@ -3042,7 +3042,7 @@ Example document:
 }
 ```
 
-**Console**
+### Console
 
 ```bash
 PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> node mongo.js JybRTpccMzTlf8Zu
@@ -3116,3 +3116,165 @@ The application:
 - Understanding how MongoDB automatically creates databases and collections
 
 - Debugging by verifying data both in the console and in the database UI
+
+## Exercise 3.13 Phonebook database Step 1
+
+### Objective
+
+Refactor the backend to fetch phonebook entries from a MongoDB database instead of using in-memory data, and organize all Mongoose-related logic into a separate module.
+
+### 1. Replaced In-Memory Data with MongoDB
+
+- Removed the local persons array.
+
+- Updated the route to fetch data directly from the database:
+
+```javascript
+app.get("/api/persons", (req, res) => {
+  Person.find({}).then((persons) => res.json(persons));
+});
+```
+
+### 2. Created a Mongoose Model Module
+
+All database-related logic was moved to a separate file:
+
+📁 `models/person.js`
+
+```javascript
+const mongoose = require("mongoose");
+
+mongoose.set("strictQuery", false);
+
+const url = process.env.MONGODB_URI;
+
+console.log("connecting to", url);
+mongoose
+  .connect(url, { family: 4 })
+  .then((result) => {
+    console.log("connected to MongoDB");
+  })
+  .catch((error) => {
+    console.log("error connecting to MongoDB:", error.message);
+  });
+
+// Define schema
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: String,
+});
+
+// Transform _id → id and remove __v
+personSchema.set("toJSON", {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString();
+    delete returnedObject._id;
+    delete returnedObject.__v;
+  },
+});
+
+module.exports = mongoose.model("Person", personSchema);
+```
+
+### 3. Environment Variables with dotenv
+
+- Installed dotenv:
+
+```bash
+npm install dotenv
+```
+
+- Created `.env` file:
+
+```bash
+MONGODB_URI=your_mongodb_connection_string
+PORT=3001
+```
+
+- Loaded variables at the top of index.js:
+
+```javascript
+require("dotenv").config();
+```
+
+### 4. Securing Sensitive Data
+
+- Added `.env` to `.gitignore`:
+
+```bash
+node_modules
+.env
+```
+
+### 5. Verified API Functionality
+
+- Started backend:
+
+```bash
+npm run dev
+```
+
+- Tested endpoint:
+
+```bash
+GET http://localhost:3001/api/persons
+```
+
+### 6 Data Format Transformation
+
+Before (MongoDB default)
+
+```json
+{
+  "_id": "123...",
+  "name": "Anna",
+  "number": "040-1234556",
+  "__v": 0
+}
+```
+
+After (cleaned for frontend)
+
+```json
+{
+  "name": "Anna",
+  "number": "040-1234556",
+  "id": "123..."
+}
+```
+
+### 7. Deployment Configuration (Render)
+
+For deployment on Render:
+
+- Navigate to your service dashboard:
+
+```bash
+Environment → Environment Variables
+```
+
+- Add the following variable:
+
+```bash
+MONGODB_URI=<your_mongodb_connection_string>
+```
+
+- Ensure no sensitive credentials are hardcoded in the source code.
+
+#### Additional Notes
+
+- Verified endpoints using browser, Postman, or REST Client.
+
+- Ensured frontend compatibility after backend changes.
+
+- Commented out legacy routes relying on in-memory data.
+
+#### Result
+
+- Backend now fetches data from MongoDB.
+
+- Mongoose logic is modularized.
+
+- API responses are formatted for frontend use.
+
+- Application remains fully functional.
