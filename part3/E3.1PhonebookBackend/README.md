@@ -1,19 +1,18 @@
-# Create folder
+# Part3
+
+## Create folder
 
 1. mkdir part3
 2. mkdir E3.1PhonebookBackend
 
-# Git
+## Git
 
 1. Go to E3.1PhonebookBackend/
 2. git checkout -b part3
 
-# Node
+## Node
 
-1. npm init
-
-- Answer the questions
-
+1. `npm init` Answer the questions
 2. package name e3.1phonebookbackend
 3. version: (1.0.0)
 4. description: Phonebook backend
@@ -52,11 +51,11 @@ Is this OK? (yes)
 
 The file defines, for instance, that the entry point of the application is the index.js file.
 
-# Create index.js
+## Create index.js
 
 1. touch index.js
 
-## Add 'Hello World' index.js
+### Add 'Hello World' index.js
 
 ```JavaScript
 const http = require('http')
@@ -121,11 +120,11 @@ Once the application is running, the following message is printed in the console
 Server running on port 3001
 ```
 
-# Open in the browser
+### Open in the browser
 
-By visiting the address http://localhost:3001:
+By visiting the address `http://localhost:3001`
 The server works the same way regardless of the latter part of the URL.
-Also the address http://localhost:3001/foo/bar will display the same content.
+Also the address `http://localhost:3001/foo/bar` will display the same content.
 
 NB If port 3001 is already in use by some other application, then starting the server will result in the following error message:
 
@@ -147,7 +146,7 @@ Error: listen EADDRINUSE :::3001
 
 You have two options. Either shut down the application using port 3001 (the JSON Server in the last part of the material was using port 3001), or use a different port for this application.
 
-# Offer raw data in JSON format to the frontend
+### Offer raw data in JSON format to the frontend
 
 Change the server to return a hardcoded list of notes in the JSON format:
 
@@ -186,7 +185,7 @@ The **application/json value** in the **Content-Type header** informs the receiv
 The notes array gets transformed into JSON formatted string with the **JSON.stringify(notes)** method.
 This is necessary because the **response.end()** method **expects a string** or a buffer **to send as the response body**.
 
-# Express
+## Express
 
 - Implementing the server code directly with Node's built-in http web server is possible.
 - However, it is cumbersome, especially once the application grows in size.
@@ -222,7 +221,7 @@ Likewise, if we start working on the project on another computer, we can install
 npm install
 ```
 
-# Web and Express
+## Web and Express
 
 Make the following changes:
 
@@ -268,8 +267,8 @@ To get the new version of our application into use, first we have to restart it.
 
 There are two routes to the application. The first one defines an event handler that is used to handle HTTP GET requests made to the application's / root:
 
-- See Hello World!: http://localhost:3001
-- See notes: http://localhost:3001/api/notes
+- See Hello World!: `http://localhost:3001`
+- See notes: `http://localhost:3001/api/notes`
 
 ## Response
 
@@ -288,7 +287,7 @@ With **Express**, _this is no longer required_, because **this transformation ha
 It's worth noting that JSON is a data format.
 However, it's often represented as a string and is not the same as a JavaScript object, like the value assigned to notes.
 
-# Automatic Change Tracking
+### Automatic Change Tracking
 
 If we change the application's code, we first need to stop the application from the console (ctrl + c) and then restart it for the changes to take effect.
 
@@ -323,7 +322,7 @@ npm run dev
 
 Unlike when running the _start_ or _test_ scripts, the command must include **_run_**.
 
-# Git
+### Git commands
 
 If you use **_git status_** notice that node modules is being tracked
 
@@ -364,7 +363,7 @@ Untracked files:
 
 Now git is not tracking _node modules folder anymore_
 
-## Now add and commit your files:
+## Now add and commit your files
 
 - Add all files (except those in .gitignore)
 
@@ -390,7 +389,7 @@ Now git is not tracking _node modules folder anymore_
   git push -u origin part3
 ```
 
-# REST
+## REST
 
 Let's expand our application so that it provides the same RESTful HTTP API as json-server.
 
@@ -398,7 +397,7 @@ Representational State Transfer, aka REST, was introduced in 2000 in Roy Fieldin
 
 In some places you will see our model for a straightforward CRUD API, being referred to as an example of resource-oriented architecture instead of REST.
 
-# Fetching a single resource
+## Fetching a single resource
 
 We can define parameters for **routes in Express** by using the **colon syntax** - example _'/api/notes/**:id'**_
 
@@ -469,7 +468,7 @@ You could simplify the route slightly by returning early:
 
 Since no data is attached to the response, we use the status method for setting the [status](https://expressjs.com/en/4x/api.html#res.status) and the end method for responding to the request without sending any data.
 
-# Deleting resources
+## Deleting resources
 
 Let's implement a route for deleting resources.
 Deletion happens by making an HTTP DELETE request to the URL of the resource:
@@ -493,10 +492,10 @@ If deleting the resource is successful, meaning that the note exists and is remo
 
 There's no consensus on what status code should be returned to a DELETE request if the resource does not exist. _The only two options are 204 and 404._ For the sake of simplicity, our application will respond with **204** in both cases.
 
-# Receiving data
+## Receiving data
 
 Let's make it possible to add new notes to the server.
-Adding a note happens by making an HTTP POST request to the address http://localhost:3001/api/persons/ , and by sending all the information for the new note in the request body in JSON format.
+Adding a note happens by making an HTTP POST request to the address `http://localhost:3001/api/persons/` , and by sending all the information for the new note in the request body in JSON format.
 
 To **access** the data easily, we need the **help of the Express json-parser** that we can use with the command **app.use(express.json())**.
 
@@ -592,7 +591,7 @@ content-type: application/json
 
 🐛 Debugging Example
 
-#### Backend Debug Code:
+### Backend Debug Code
 
 ```javascript
 const express = require("express");
@@ -680,23 +679,23 @@ Server Output:
 
 ✅ **The golden rule: Headers right after URL, ONE empty line, then body!**
 
-# Important sidenote when debugging
+### Important sidenote when debugging
 
 **_Sometimes when you're debugging_**, you may want to find out what **headers** have been set in the HTTP request. One way of **accomplishing** this is through the **get method of the request object**, **_that can be used for getting the value of a single header_**. The request object also has the headers property, that contains all of the headers of a specific request.
 
 **NB:** Sometimes in the console there will be cached data due to by node --watch (try **stopping and restarting**)
 
-# Postman
+### Postman
 
 Install the Postman desktop client and try it out.
 
 Postman is also available on VS Code which can be downloaded from the
 
-- Extension tab on the left -> search for Postman -> First result (Verified Publisher) -> Install [Link](https://marketplace.visualstudio.com/items?itemName=Postman.postman-for-vscode)
+- Extension tab on the left -> search for Postman -> First result (Verified Publisher) -> Install [VS extension Postman link](https://marketplace.visualstudio.com/items?itemName=Postman.postman-for-vscode)
 
 You will then see an extra icon added on the activity bar below the extensions tab. Once you log in, you can follow the steps below
 
-# The Visual Studio Code REST client
+### The Visual Studio Code REST client
 
 Install this extension in Visual Studio Code [REST client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
 
@@ -732,9 +731,9 @@ Send Request
 GET http://localhost:3001/api/persons/10
 ```
 
-# About HTTP request types
+## About HTTP request types
 
-## Safety (Safe requests):
+### Safety (Safe requests)
 
 A safe request should not change anything on the server (no side effects like modifying a database).
 
@@ -746,7 +745,7 @@ HEAD works like GET but returns only the status code and headers, no response bo
 
 Safety is a recommendation in the HTTP standard, not something guaranteed.
 
-## Idempotency (Idempotent requests):
+## Idempotency (Idempotent requests)
 
 A request is idempotent if sending it multiple times produces the same result as sending it once.
 
@@ -754,7 +753,7 @@ GET, HEAD, PUT, and DELETE should be idempotent.
 
 Example: Sending the same PUT request multiple times updates the resource to the same final state.
 
-### POST requests:
+### POST requests
 
 **_POST is neither safe nor idempotent._**
 
@@ -768,24 +767,24 @@ Sending the same POST request multiple times can create multiple new resources.
 
 **_POST:_** Only method that is **_not safe and not idempotent._**
 
-# Middleware
+## Middleware
 
-## What is Middleware?
+### What is Middleware?
 
 Middleware are **functions that handle request and response objects** in an Express server.
 
-## JSON Parser Middleware
+### JSON Parser Middleware
 
 - Takes **raw data from requests**.
 - **Parses it into a JavaScript object**.
 - Stores the result in **`request.body`**.
 
-## Execution Order
+### Execution Order
 
 - Multiple middlewares can be used in an application.
 - They run **in the order they are declared in the code**.
 
-## Middleware Function Structure
+### Middleware Function Structure
 
 Middleware functions receive **three parameters**:
 
@@ -807,7 +806,7 @@ const requestLogger = (request, response, next) => {
 };
 ```
 
-# Morgan middleware
+## Morgan middleware
 
 [npm](https://www.npmjs.com/package/morgan)
 [github](https://github.com/expressjs/morgan)
@@ -894,7 +893,7 @@ morgan(function (tokens, req, res) {
 
 Note that logging data even in the console can be dangerous since it can contain sensitive data and may violate local privacy law (e.g. GDPR in EU) or business-standard. In this exercise, you don't have to worry about privacy issues, but in practice, try not to log any sensitive data.
 
-# ⭐ Clean Structure Example (conceptually)
+## ⭐ Clean Structure Example (conceptually)
 
 Your file should look like:
 
@@ -906,7 +905,7 @@ routes
 app.listen
 ```
 
-# Run as a script or as a development
+### Run as a script or as a development
 
 - Run as a script with 'npm start'
 - Add development mode with 'npm run dev'
@@ -926,7 +925,7 @@ PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> npm run dev
 Server running on port 3001
 ```
 
-# Deploying app to internet
+## Deploying app to internet
 
 Let's connect the frontend to the backend.
 
@@ -948,7 +947,7 @@ This section explains:
 
 - How to enable CORS in a Node.js backend
 
-# What is an Origin?
+### What is an Origin?
 
 An origin is defined by the combination of three components:
 
@@ -978,7 +977,7 @@ If **any of these three values differ**, the origin is considered different.
 
 The **Same-Origin Policy** prevents scripts on one website from interacting with resources from another origin.
 
-**Example**
+### Example
 
 ```bash
 Frontend: http://localhost:5173
@@ -1013,7 +1012,7 @@ This is done through HTTP response headers.
 
 Important header:
 
-```
+```bash
 Access-Control-Allow-Origin
 ```
 
@@ -1076,7 +1075,7 @@ app.use(
 
 This configuration allows requests **only from the specified frontend application.**
 
-**Key Takeaways**
+### Key Takeaways
 
 - **Same-Origin Policy** protects users by blocking cross-origin requests.
 
@@ -1088,7 +1087,7 @@ This configuration allows requests **only from the specified frontend applicatio
 
 - In **production**, restrict CORS to specific trusted origins.
 
-# Frontend–Backend Integration
+## Frontend–Backend Integration
 
 At this stage, most features in the frontend are functional. The React application successfully communicates with the backend API and retrieves notes.
 
@@ -1233,7 +1232,7 @@ BackendServer -->|JSON Response| Browser
 
 - Platforms like **Render** and **Fly.io** simplify application deployment.
 
-# Deploying the Backend with Render
+## Deploying the Backend with Render
 
 This project can be deployed using Render, a cloud platform that allows you to host web services directly from a GitHub repository.
 
@@ -1257,7 +1256,7 @@ Sign in to Render using your GitHub account.
 
 Once logged in, open the **dashboard** and create a new service.
 
-**Dashboard → New → Web Service**
+`Dashboard → New → Web Service`
 
 ### 2. Connect the GitHub Repository
 
@@ -1375,7 +1374,7 @@ app.listen(PORT, () => {
 });
 ```
 
-**How It Works**
+#### How It Works
 
 | Variable           | Purpose                                  |
 | ------------------ | ---------------------------------------- |
@@ -1405,7 +1404,7 @@ BackendAPI -->|JSON Response| Browser
 - Logs can be viewed from the Render dashboard
 - The server must use process.env.PORT for compatibility with cloud environments
 
-# Frontend Production Build
+## Frontend Production Build
 
 So far the React application has been running in **development mode**.  
 Development mode provides helpful features such as:
@@ -1462,7 +1461,7 @@ Example of minified code:
 
 Minified code is intentionally **hard to read** but significantly **smaller and faster** to load in the browser.
 
-# Serving Static Files from the Backend
+## Serving Static Files from the Backend
 
 One common way to deploy a full-stack application is to **serve the frontend build directly from the backend**.  
 This means the backend will handle:
@@ -1523,7 +1522,7 @@ app.use(express.static("dist"));
 
 This middleware tells Express to serve files from the `dist` directory.
 
-**How It Works**
+#### How express will work now
 
 When the server receives a **GET request**, Express will:
 
@@ -1531,13 +1530,14 @@ When the server receives a **GET request**, Express will:
 2. If it exists → return the file
 3. Otherwise → continue processing other routes (such as API endpoints)
 
-**Example Routes**
-| Request | Handled By |
+#### Example Routes
+
+| Request       | Handled By            |
 | ------------- | --------------------- |
-| `/` | React frontend |
-| `/index.html` | React frontend |
+| `/`           | React frontend        |
+| `/index.html` | React frontend        |
 | `/assets/...` | React frontend assets |
-| `/api/notes` | Backend API |
+| `/api/notes`  | Backend API           |
 
 ### 3. Use Relative API URLs in the Frontend
 
@@ -1667,7 +1667,7 @@ Workflow:
 
 The backend returns JSON data, and React renders the notes in the UI.
 
-# Deploying the Full Application
+## Deploying the Full Application
 
 After confirming that the **production version works locally**, the next step is to deploy the entire application to the internet.
 
@@ -1713,7 +1713,7 @@ Typical workflow with Render:
 
 If automatic deployment does not trigger, you can redeploy manually.
 
-**Manual Deployment**
+### Manual Deployment
 
 From the Render dashboard:
 
@@ -1738,13 +1738,13 @@ When visiting this URL:
 3. The React application starts
 4. React fetches data from the backend API
 
-**Current Application Status**
+### Current Application Status
 
 The application works correctly, except for one missing feature changing the importance of a note is not implemented yet.
 
 The backend currently does not contain the endpoint required to update the importance field. This functionality will be added later.
 
-**Data Persistence**
+### Data Persistence
 
 At the moment, notes are stored in a **temporary in-memory** variable inside the backend server.
 
@@ -1781,7 +1781,7 @@ Browser -->|GET /api/notes| RenderServer
 RenderServer -->|JSON data| Browser
 ```
 
-**Application Flow**
+### Application Flow
 
 - The user navigates to the deployed URL.
 - The server returns the React frontend (index.html).
@@ -1796,7 +1796,7 @@ RenderServer -->|JSON data| Browser
 - The backend returns the JSON data.
 - The frontend renders the notes.
 
-**Deployment Summary**
+### Deployment Summary
 
 - The frontend build (dist) is served by the backend.
 - The backend runs on a cloud server (Render).
@@ -1804,7 +1804,7 @@ RenderServer -->|JSON data| Browser
 - Data is currently stored in memory, so it is not persistent.
 - A database will be introduced later to store notes permanently.
 
-# Streamlining Frontend Deployment
+### Streamlining Frontend Deployment
 
 To simplify the deployment workflow, we can automate the process of **building the frontend and copying it to the backend**.
 
@@ -1884,7 +1884,7 @@ git push
 
 Once the code is pushed, Render will automatically **redeploy the application.**
 
-**Directory Structure Requirement**
+### Directory Structure Requirement
 
 These scripts assume the following directory structure:
 
@@ -1911,7 +1911,7 @@ fullstack-project
 
 If your directory structure is different, the paths in the scripts must be adjusted.
 
-**Windows Compatibility**
+### Windows Compatibility
 
 On Windows, npm scripts run using **cmd.exe** by default.
 
@@ -1949,7 +1949,7 @@ cp -r dist ../backend
 
 with their `shx` equivalents.
 
-**Deployment Workflow Summary**
+#### Deployment Workflow Summary
 
 With these scripts, the deployment process becomes:
 
@@ -1965,7 +1965,7 @@ Which automatically:
 4. Pushes the update to GitHub
 5. Triggers a new deployment on Render
 
-# Proxy Configuration for Development
+## Proxy Configuration for Development
 
 After changing the frontend API URL to a **relative path**, the frontend may stop working in development mode.
 
@@ -2060,7 +2060,7 @@ Because the development proxy makes requests appear as if they come from the sam
 
 Remove CORS from the backend.
 
-**Remove the dependency**
+## Remove the dependency
 
 ```bash
 npm remove cors
@@ -2094,7 +2094,7 @@ ViteDevServer -->|proxy /api requests| BackendServer[Node.js API :3001]
 BackendServer --> Browser
 ```
 
-## Production Architecture
+## Production Architecture diagram
 
 ```mermaid
 flowchart LR
@@ -2124,8 +2124,6 @@ A **deployment pipeline** is an automated process that moves code from developme
 Automated deployment pipelines are discussed later in the course.
 
 ---
-
-# Exercises
 
 ## 3.9 Phonebook backend step 9
 
@@ -2223,7 +2221,7 @@ http://localhost:5173/`
 npm install cors
 ```
 
-**Enable CORS globally**
+#### Enable CORS globally
 
 Go to the `index.js` backend file and add this:
 
@@ -2353,7 +2351,7 @@ NB: Where is the package.json? where is the index.js file? that is the Root dire
 
 - Instance Type: `For hobby projects` with the value `Free`
 
-8. Click on `Deploy Web Service` ✅
+Finally click on `Deploy Web Service` ✅
 
 #### Deploy in Render `Your service is live 🎉`
 
@@ -2462,9 +2460,10 @@ const PORT = process.env.PORT || 3001;
 ```
 
 This means:
-| Environment | Port used |
+
+| Environment       | Port used            |
 | ----------------- | -------------------- |
-| Local development | 3001 |
+| Local development | 3001                 |
 | Render production | whatever Render sets |
 
 This pattern is **standard for Node deployments.**
@@ -2477,11 +2476,15 @@ Backend REST API for the Phonebook application built during the Full Stack Open 
 
 #### Live Application
 
+```bash
 https://render-the-phonebook-app.onrender.com
+```
 
 #### API Endpoint
 
+```bash
 https://render-the-phonebook-app.onrender.com/api/persons
+```
 
 #### Tech Stack
 
@@ -2551,15 +2554,15 @@ Now `dist` folder lives here in the root:
 
 - In the file index.js add the middleware
 
-```
-app.use(express.static('dist'))
+```javascript
+app.use(express.static("dist"));
 ```
 
 Now you are able to see the React app in `http://localhost:3001/`
 
 If you test this:
 
-```
+```bash
 ### ==================== GET REQUESTS ====================
 
 ### Get root endpoint
@@ -2728,9 +2731,9 @@ Now the frontend is also working correctly. It functions both in development mod
 
 ### ✅ Step 6 — CORS is not needed anymore
 
-Since from the frontend's perspective all requests are made to http://localhost:5173, which is the single origin, there is no longer a need for the backend's cors middleware. Therefore, we can **remove references to the cors library** from the **backend's `index.js`** file and remove cors from the project's dependencies:
+Since from the frontend's perspective all requests are made to `http://localhost:5173`, which is the single origin, there is no longer a need for the backend's cors middleware. Therefore, we can **remove references to the cors library** from the **backend's `index.js`** file and remove cors from the project's dependencies:
 
-```
+```javascript
 npm remove cors
 ```
 
@@ -2805,14 +2808,14 @@ After these steps, the application works in both environments:
 
 Development:
 
-- React dev server → http://localhost:5173
-- Backend API → http://localhost:3001
+- React dev server → `http://localhost:5173`
+- Backend API → `http://localhost:3001`
 
 Production:
 
 - Express server serves both the API and the React application from `dist`.
 
-### Application Architecture
+### Application Architecture in development and production mode
 
 Development mode:
 
@@ -2830,7 +2833,7 @@ Browser → Express Server (3001)
 
 ---
 
-# Chrome dev tools
+## Chrome dev tools
 
 Debugging is also possible with the Chrome developer console by starting your application with the command:
 
@@ -2840,7 +2843,7 @@ node --inspect index.js
 
 ---
 
-# Exercise 3.12 – Command-line Database
+## Exercise 3.12 – Command-line Database
 
 ## Goal
 
@@ -2854,9 +2857,9 @@ Create a **command-line application** that:
 
 ## ✅ 1. Set up MongoDB Atlas
 
-### Steps:
+### Steps
 
-1. Go to https://www.mongodb.com/
+1. Go to `https://www.mongodb.com/`
 2. Create an account and a new project
 3. Create a **free cluster**
    - Provider: `AWS`
@@ -2871,7 +2874,7 @@ Create a **command-line application** that:
 
 Example URI:
 
-mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+mongodb+srv://<`username`>:<`password`>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
 
 ## ✅ 2. Install Mongoose
 
@@ -2943,7 +2946,7 @@ if (process.argv.length === 5) {
 mongodb+srv://fullstack_db_user:${password}@cluster0.i0zdjs6.mongodb.net/phonebookApp?retryWrites=true&w=majority
 ```
 
-### Key concept:
+### Key concept
 
 - `/phonebookApp` → database name
 - If omitted → MongoDB uses default database (`test`)
