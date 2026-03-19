@@ -28,15 +28,20 @@ app.get("/", (request, response) => {
   response.send("<h1>Hello World!</h1>");
 });
 
-app.get("/api/persons", (req, res) => {
-  Person.find({}).then((persons) => res.json(persons));
+app.get("/api/persons", (request, response) => {
+  Person.find({}).then((persons) => response.json(persons));
 });
 
-/*
-app.get("/info", (request, response) => {
-  response.send(utils.getInfoMessage(persons));
+app.get("/info", (request, response, next) => {
+  Person.countDocuments({})
+    .then((result) => {
+      return response.send(`
+      <p>Phone has info for ${result} people</p>
+      <p>${new Date()}</p>
+      `);
+    })
+    .catch((error) => next(error));
 });
-*/
 
 app.get("/api/persons/:id", (request, response, next) => {
   Person.findById(request.params.id)

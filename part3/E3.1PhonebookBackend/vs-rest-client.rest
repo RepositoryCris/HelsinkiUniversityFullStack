@@ -29,7 +29,7 @@ GET {{baseUrl}}/api/persons/99999
 ### ==================== DELETE REQUESTS ====================
 
 ### Delete person with ID 1 (if exists)
-DELETE {{baseUrl}}/api/persons/69ba40661ea0e31602249e10
+DELETE {{baseUrl}}/api/persons/1
 # Expected: 204 No Content or 404 Not Found
 
 ### ========= POST REQUESTS =========
@@ -108,6 +108,7 @@ content-type: application/json
 }
 ### Expected: 400 { "error": "Name must be unique" }
 
+### ========= PUT REQUESTS =========
 
 ### [SUCCESS] Put a valid person
 PUT {{baseUrl}}/api/persons/69bb4f238037f33f8ffe0b04

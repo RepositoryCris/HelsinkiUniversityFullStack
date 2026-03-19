@@ -3370,3 +3370,96 @@ The functionality was tested through the frontend:
 - Re-deleting the same entry returns 404 Not Found
 
 - Invalid IDs return a proper error response
+
+## Phonebook Backend 3.17 & 3.18
+
+This project is part of the Full Stack Open course and focuses on extending a phonebook application backend using Node.js, Express, and MongoDB (via Mongoose).
+
+The goal of these exercises:
+
+- Implement update functionality for existing entries (3.17)
+- Fully integrate database usage across all relevant routes (3.18)
+
+### Exercise 3.17 – Update Existing Phonebook Entries
+
+Allow the frontend to update an existing person's phone number when attempting to add a duplicate name.
+
+#### Implementation
+
+- Added a `PUT /api/persons/:id` endpoint
+- Used `findByIdAndUpdate` from Mongoose to update the phone number
+- Ensured validation is enforced using `runValidators: true`
+- Returned the updated document using `{ new: true }`
+- Handled cases where the person does not exist (404 response)
+
+#### Code Example
+
+```js
+app.put("/api/persons/:id", (request, response, next) => {
+  const { number } = request.body;
+
+  Person.findByIdAndUpdate(
+    request.params.id,
+    { number },
+    { new: true, runValidators: true },
+  )
+    .then((updatedPerson) => {
+      if (!updatedPerson) {
+        return response.status(404).end();
+      }
+      response.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+```
+
+- Prevents duplicate entries by updating existing ones
+- Ensures frontend and backend remain in sync
+- Maintains RESTful API design
+
+### Exercise 3.18 – Database Integration for Info and Detail Routes
+
+Ensure that all routes use the MongoDB database instead of in-memory data.
+
+#### Get Individual Person
+
+- Uses `Person.findById()`
+- Returns JSON if found
+- Returns 404 if not found
+
+```js
+app.get("/api/persons/:id", (request, response, next) => {
+  Person.findById(request.params.id)
+    .then((person) => {
+      if (person) {
+        response.json(person);
+      } else {
+        return response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
+});
+```
+
+#### Info Route
+
+- Uses `Person.countDocuments()` to count entries
+- Returns an HTML response with the count and current date
+
+```js
+app.get("/info", (request, response, next) => {
+  Person.countDocuments({})
+    .then((count) => {
+      response.send(`
+        <p>Phonebook has info for ${count} people</p>
+        <p>${new Date()}</p>
+      `);
+    })
+    .catch((error) => next(error));
+});
+```
+
+- All routes now interact with the database
+- No reliance on in-memory data
+- `/info` provides dynamic, real-time data
+- Endpoints work correctly in browser, Postman, and REST clients
