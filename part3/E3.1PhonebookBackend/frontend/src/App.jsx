@@ -120,22 +120,30 @@ const App = () => {
               type: "success",
             });
             // No timer logic here! The useEffect above sees the message change and starts the timer automatically.
+            resetInputs();
           })
           .catch((error) => {
+            let message = "Server is unavailable";
+
+            if (error.response) {
+              // The server responded
+              if (error.response.status === 404) {
+                message = `Information of '${existingPerson.name}' has already been removed from the server`;
+                // Optionally remove them from state:
+                setPersons((prev) =>
+                  prev.filter((person) => person.id !== existingPerson.id),
+                );
+              } else if (error.response.data?.error) {
+                message = error.response.data.error; // backend validation message
+              }
+            }
+
             setNotification({
-              message: `Information of '${existingPerson.name}' has already been removed from the server`,
+              message: message,
               type: "error",
             });
             console.error("Failed to update person:", error);
-            // Update the state to remove the deleted person:
-            // 1. `prev` is the previous array of persons in state
-            // 2. `.filter(...)` creates a new array excluding the person with the matching ID
-            // 3. This ensures we remove the person immutably without mutating the original state
-            setPersons((prev) =>
-              prev.filter((person) => person.id !== existingPerson.id),
-            );
-          })
-          .finally(() => resetInputs());
+          });
       }
       return;
     }
@@ -148,15 +156,17 @@ const App = () => {
           type: "success",
         });
         // No timer logic here! The useEffect above sees the message change and starts the timer automatically.
+        resetInputs();
       })
       .catch((error) => {
-        console.error("Failed to create person:", error);
         setNotification({
-          message: "Could not create person on server",
+          message: error.response?.data?.error || "Server is unavailable",
           type: "error",
         });
-      })
-      .finally(() => resetInputs());
+        /*console.log("FULL ERROR:", error);
+        console.log("RESPONSE:", error.response);
+        console.log("DATA:", error.response?.data); //real error data*/
+      });
   };
 
   return (

@@ -3463,3 +3463,114 @@ app.get("/info", (request, response, next) => {
 - No reliance on in-memory data
 - `/info` provides dynamic, real-time data
 - Endpoints work correctly in browser, Postman, and REST clients
+
+---
+
+## 3.19 Phonebook Database – Step 7
+
+1. Expand the **backend validation** so that:
+   - Names must be at least **3 characters long**.
+   - Numbers must also exist (basic required field validation).
+
+2. Expand the **frontend** to:
+   - Display error messages when validation fails.
+   - Handle errors returned from the backend for both **create** and **update** operations.
+
+### Backend Changes
+
+#### Validation Rules
+
+In `models/person.js` (Mongoose schema):
+
+```js
+const personSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    minlength: [3, "Name must be at least 3 characters long"],
+    required: [true, "Name is required"],
+  },
+  number: {
+    type: String,
+    required: [true, "Number is required"],
+  },
+});
+```
+
+- Ensures all names saved to the database are **≥3 characters**.
+
+- Uses **Mongoose built-in validation** with clear error messages.
+
+#### Update Operation Validation
+
+- Enabled validators on **update** by adding options:
+
+```js
+Person.findByIdAndUpdate(
+  id,
+  { number: number },
+  { new: true, runValidators: true, context: "query" },
+);
+```
+
+- runValidators: true ensures validation is applied on updates.
+
+- context: "query" is required for some Mongoose validators to work properly on updates.
+
+### Frontend Changes
+
+#### Error Handling in React
+
+When creating or updating a contact, errors are caught and displayed via the Notification component:
+
+```js
+createPerson(personObject)
+  .then((data) => {
+    setPersons((prev) => prev.concat(data));
+    setNotification({
+      message: `'${data.name}' added to phonebook`,
+      type: "success",
+    });
+    resetInputs();
+  })
+  .catch((error) => {
+    setNotification({
+      message: error.response?.data?.error || "Server is unavailable",
+      type: "error",
+    });
+  });
+```
+
+- This also works for update operations:
+
+```js
+updatePerson(existingPerson.id, updatedPerson)
+  .then(...)
+  .catch((error) => {
+    let message = "Server is unavailable";
+    if (error.response) {
+      if (error.response.status === 404) {
+        message = `Information of '${existingPerson.name}' has already been removed from the server`;
+        setPersons(prev => prev.filter(p => p.id !== existingPerson.id));
+      } else if (error.response.data?.error) {
+        message = error.response.data.error;
+      }
+    }
+    setNotification({ message, type: "error" });
+  });
+```
+
+#### UX Improvements
+
+- Inputs are reset only after successful create/update.
+
+- Notifications auto-hide after 5 seconds.
+
+- Validation messages from the backend are shown directly to the user, giving instant feedback.
+
+| Feature           | Before          | After                                                          |
+| ----------------- | --------------- | -------------------------------------------------------------- |
+| Name validation   | None            | Minimum 3 characters                                           |
+| Update validation | Validators off  | Validators enabled (`runValidators: true`)                     |
+| Error messages    | Generic / empty | Friendly messages displayed in Notification                    |
+| Input reset       | Always          | Only on success                                                |
+| Notification      | Basic           | Auto-hide, error types (`success`, `error`, `info`, `warning`) |

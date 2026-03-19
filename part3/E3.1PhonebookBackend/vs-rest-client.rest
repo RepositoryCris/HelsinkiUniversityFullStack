@@ -108,6 +108,18 @@ content-type: application/json
 }
 ### Expected: 400 { "error": "Name must be unique" }
 
+
+### [ERROR] Post with minLength < 3 in name (case insensitive)
+POST {{baseUrl}}/api/persons/
+content-type: application/json
+
+{
+    "name": "cr",
+    "number": "666"
+}
+### Expected: 400 { "error": "Name must be unique" }
+
+
 ### ========= PUT REQUESTS =========
 
 ### [SUCCESS] Put a valid person

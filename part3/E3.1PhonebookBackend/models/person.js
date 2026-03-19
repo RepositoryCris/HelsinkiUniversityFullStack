@@ -16,8 +16,15 @@ mongoose
 
 // Define schema
 const personSchema = new mongoose.Schema({
-  name: String,
-  number: String,
+  name: {
+    type: String,
+    minLength: [3, "Name must be at least 3 characters long"], // minLength validator
+    required: [true, "Name is required"], // required validator
+  },
+  number: {
+    type: String,
+    required: [true, "Number is required"],
+  },
 });
 
 // Transform _id → id and remove __v
