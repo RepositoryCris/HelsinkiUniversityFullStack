@@ -3730,3 +3730,254 @@ Client receives JSON error message
 - Express **error-handling middleware** formats the error into a clear HTTP response.
 
 - Users always receive a **descriptive error message**, helping them correct invalid phone numbers.
+
+## EsLint Configuration Summary (Full Stack Open - Backend)
+
+### What is Lint?
+
+- A **linter** analyzes code and detects:
+  - Errors
+  - Bad practices
+  - Style inconsistencies
+- ESLint is the most popular linter in JavaScript.
+
+---
+
+### Installation of eslint
+
+Install ESLint and base config:
+
+```bash
+npm install eslint @eslint/js --save-dev
+```
+
+Answer all of the questions:
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend> npx eslint --init
+You can also run this command directly using 'npm init @eslint/config@latest'.
+@eslint/create-config: v1.11.0
+
+√ What do you want to lint? · javascript
+√ How would you like to use ESLint? · syntax
+√ What type of modules does your project use? · commonjs
+√ Which framework does your project use? · none
+√ Does your project use TypeScript? · No / Yes rites=true&w=majority
+√ Where does your code run? · browser
+i The config that you've selected requires the following dependencies:
+
+eslint, globals
+√ Would you like to install them now? · No / Yes
+√ Which package manager do you want to use? · npm
+☕️Installing...
+
+added 1 package, removed 1 package, and audited 157 packages in 5s
+
+41 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+√ Successfully created D:\HelsinkiUniversityFullStack\part3\E3.1PhonebookBackend\eslint.config.mjs file.
+```
+
+Install stylistic rules plugin:
+
+```bash
+npm install --save-dev @stylistic/eslint-plugin
+```
+
+### Basic ESLint Configuration
+
+File: `eslint.config.mjs`
+
+```js
+import globals from "globals";
+import js from "@eslint/js";
+import stylisticJs from "@stylistic/eslint-plugin";
+import { defineConfig } from "eslint/config";
+
+export default defineConfig([
+  js.configs.recommended,
+
+  {
+    files: ["**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: globals.node,
+      ecmaVersion: "latest",
+    },
+  },
+
+  {
+    ignores: ["dist/**"],
+  },
+
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    plugins: {
+      "@stylistic/js": stylisticJs,
+    },
+    rules: {
+      "@stylistic/js/indent": ["error", 2],
+      "@stylistic/js/linebreak-style": ["error", "unix"],
+      "@stylistic/js/quotes": ["error", "single"],
+      "@stylistic/js/semi": ["error", "never"],
+
+      eqeqeq: "error",
+      "no-trailing-spaces": "error",
+      "object-curly-spacing": ["error", "always"],
+      "arrow-spacing": ["error", { before: true, after: true }],
+      "no-console": "off",
+    },
+  },
+]);
+```
+
+#### 1. Recommended Rules
+
+```js
+js.configs.recommended;
+```
+
+- Adds default ESLint best practices.
+
+#### 2. Language Options
+
+```js
+languageOptions: {
+  sourceType: 'commonjs',
+  globals: globals.node,
+  ecmaVersion: 'latest',
+}
+```
+
+- Supports Node.js (process, etc.)
+
+- Enables latest JS syntax
+
+#### 3. Ignore Folder
+
+```js
+ignores: ["dist/**"];
+```
+
+- Prevents linting build files
+
+#### 4. Stylistic Rules
+
+Using `@stylistic/eslint-plugin`:
+
+- 2 spaces indentation
+- Unix line endings (`LF`)
+- Single quotes `'`
+- No semicolons
+
+#### 5. Extra Rules
+
+```js
+eqeqeq: "error";
+```
+
+- Forces === instead of ==
+
+```js
+'no-trailing-spaces': 'error'
+```
+
+- Removes spaces at end of lines
+
+```js
+'object-curly-spacing': ['error', 'always']
+```
+
+- `{ name: 'John' }` ✔
+
+```js
+'arrow-spacing': ['error', { before: true, after: true }]
+```
+
+- `(a) => b` ✔
+
+```js
+'no-console': 'off'
+```
+
+- Allows `console.log`
+
+### Running ESLint
+
+#### Check files
+
+```bash
+npx eslint .
+```
+
+#### Auto-fix
+
+```bash
+npx eslint . --fix
+```
+
+#### NPM script
+
+```json
+"scripts": {
+  "lint": "eslint ."
+}
+```
+
+Run with:
+
+```bash
+npm run lint
+```
+
+### Common Issues & Fixes
+
+#### CRLF vs LF (Windows issue)
+
+- ESLint expects `LF`
+- Fix in VS Code:
+  - Bottom-right corner → change CRLF → LF
+
+#### 'process is not defined'
+
+✔ Fixed by:
+
+```js
+globals: globals.node;
+```
+
+#### 'no-unused-vars'
+
+- Remove unused variables OR rename:
+
+```js
+.then((_result) => { ... })
+```
+
+#### Final Result (Setup)
+
+✔ ESLint fully working
+✔ Auto-fix enabled
+✔ Node globals configured
+✔ Clean style enforced
+✔ Only real errors remain
+
+#### Tips
+
+Use VS Code ESLint extension to:
+
+- See errors instantly
+
+- Auto-fix on save
+
+#### Summary eslint
+
+✅ Production-ready ESLint setup
+
+✅ Clean, consistent code style
+
+✅ Automatic formatting with --fix
+
+✅ Proper Node.js support
