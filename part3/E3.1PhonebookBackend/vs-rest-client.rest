@@ -29,7 +29,7 @@ GET {{baseUrl}}/api/persons/99999
 ### ==================== DELETE REQUESTS ====================
 
 ### Delete person with ID 1 (if exists)
-DELETE {{baseUrl}}/api/persons/1
+DELETE {{baseUrl}}/api/persons/69ba40661ea0e31602249e10
 # Expected: 204 No Content or 404 Not Found
 
 ### ========= POST REQUESTS =========

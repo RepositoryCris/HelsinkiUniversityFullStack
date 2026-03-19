@@ -3281,3 +3281,92 @@ MONGODB_URI=<your_mongodb_connection_string>
 - API responses are formatted for frontend use.
 
 - Application remains fully functional.
+
+## 3.15: Phonebook database, step 3
+
+Update the backend so that deleting a phonebook entry removes it permanently from the database, and verify that the frontend remains fully functional after the change.
+
+### Backend Delete Endpoint
+
+A DELETE endpoint was implemented to remove a person by their unique identifier:
+
+```javascript
+app.delete("/api/persons/:id", (request, response, next) => {
+  const id = request.params.id;
+
+  Person.findByIdAndDelete(id)
+    .then((result) => {
+      if (result === null) {
+        return response.status(404).end();
+      } else {
+        return response.status(204).end();
+      }
+    })
+    .catch((error) => next(error));
+});
+```
+
+- **Successful deletion** → returns 204 No Content
+
+- **Non-existent ID** → returns 404 Not Found
+
+- **Invalid ID format** → handled by error middleware (400 Bad Request)
+
+### Error Handling
+
+A centralized error handler was added to manage malformed MongoDB IDs:
+
+```javascript
+const errorHandler = (error, request, response, next) => {
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
+```
+
+### Promise Behavior (Important Concept)
+
+When using Mongoose query methods like findByIdAndDelete, the returned Promise resolves with:
+
+- **The deleted document** → if a matching entry is found
+
+- **null** → if no document exists with the given ID
+
+This behavior is critical for handling deletion logic correctly:
+
+```javascript
+.then((result) => {
+  if (result === null) {
+    // No document found → nothing deleted
+    return response.status(404).end();
+  }
+  // Document found and deleted
+  return response.status(204).end();
+})
+```
+
+This eliminates the need for a separate existence check before deletion.
+
+#### Data flow
+
+1. User clicks delete in the frontend
+
+2. Frontend sends `DELETE /api/persons/:id`
+
+3. Backend: Locates entry in MongoDB. Deletes it if found. Returns appropriate HTTP status.
+
+4. Frontend updates UI accordingly
+
+The functionality was tested through the frontend:
+
+- Deleting a person removes it from the UI
+
+- Refreshing the page confirms the entry is permanently deleted from the database
+
+- Re-deleting the same entry returns 404 Not Found
+
+- Invalid IDs return a proper error response

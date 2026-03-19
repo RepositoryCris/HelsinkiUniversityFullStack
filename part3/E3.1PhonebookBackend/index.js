@@ -38,29 +38,32 @@ app.get("/info", (request, response) => {
 });
 */
 
-app.get("/api/persons/:id", (request, response) => {
-  Person.findById(request.params.id).then((person) => {
-    if (!person) {
-      return response.status(404).end();
-    }
-    response.json(person);
-  });
+app.get("/api/persons/:id", (request, response, next) => {
+  Person.findById(request.params.id)
+    .then((person) => {
+      if (person) {
+        response.json(person);
+      } else {
+        return response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
-/*
-app.delete("/api/persons/:id", (request, response) => {
+
+app.delete("/api/persons/:id", (request, response, next) => {
   const id = request.params.id;
 
-  const person = persons.find((person) => person.id === id);
-  if (!person) {
-    return response.status(404).end();
-  }
-
-  const filteredPersons = persons.filter((person) => person.id !== id);
-  persons = filteredPersons;
-  console.log(`Person with id ${id} deleted successfully`);
-  response.status(204).end();
+  Person.findByIdAndDelete(id)
+    .then((result) => {
+      if (result === null) {
+        return response.status(404).end();
+      } else {
+        return response.status(204).end();
+      }
+    })
+    .catch((error) => next(error));
 });
-*/
+
 app.post("/api/persons", (request, response) => {
   const body = request.body;
 
@@ -85,6 +88,19 @@ app.post("/api/persons", (request, response) => {
     response.json(savedPerson);
   });
 });
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+// this has to be the last loaded middleware, also all the routes should be registered before this!
+app.use(errorHandler);
 
 //app.listen
 app.listen(PORT, () => {
