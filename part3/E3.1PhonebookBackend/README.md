@@ -3574,3 +3574,159 @@ updatePerson(existingPerson.id, updatedPerson)
 | Error messages    | Generic / empty | Friendly messages displayed in Notification                    |
 | Input reset       | Always          | Only on success                                                |
 | Notification      | Basic           | Auto-hide, error types (`success`, `error`, `info`, `warning`) |
+
+## Exercise 3.20 Phonebook database
+
+The objective:
+
+- A **phone number** (required, validated for correct format)
+
+A major requirement **custom validation for phone numbers**, ensuring that numbers are stored only if they meet the specified format:
+
+- Must contain **at least 8 characters**
+- Must include **exactly one dash (`-`)**
+- **First part:** 2–3 digits
+- **Second part:** 5 or more digits
+
+**Valid examples:** `09-1234567`, `040-22334455`  
+**Invalid examples:** `1234567`, `1-22334455`, `10-22-334455`
+
+The **custom validator** is implemented in the Mongoose schema and is responsible for:
+
+1. Splitting the number into parts at the dash (`-`)
+2. Verifying that the first part contains 2–3 digits
+3. Verifying that the second part contains 5 or more digits
+4. Rejecting any number that does not meet the requirements
+
+This ensures that only correctly formatted numbers are accepted, maintaining **data integrity at the database level**.
+
+Additionally, Mongoose’s schema validation is integrated with Express error handling, so **all validation errors result in descriptive error messages** returned to the client.
+
+### Custom Phone Number Validation
+
+The Mongoose schema includes a **custom validator** that ensures phone numbers follow the required format:
+
+```js
+const personSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Name is required"],
+    minLength: [3, "Name must be at least 3 characters long"],
+    unique: true,
+  },
+  number: {
+    type: String,
+    required: [true, "Number is required"],
+    validate: {
+      validator: function (v) {
+        const parts = v.split("-");
+        if (parts.length !== 2) return false;
+
+        const [first, second] = parts;
+        if (!/^\d{2,3}$/.test(first)) return false;
+        if (!/^\d{5,}$/.test(second)) return false;
+
+        return true;
+      },
+      message: (props) => `${props.value} is not a valid phone number!`,
+    },
+  },
+});
+```
+
+This ensures:
+
+- Exactly one dash separates two parts
+- First part: 2–3 digits
+- Second part: 5 or more digits
+
+### About the process
+
+When you try to save() a new Person or update a number via PUT, Mongoose runs this validator.
+If the number doesn’t meet the format, the validator returns false.
+Mongoose creates a ValidationError, which contains:
+
+error.name = "ValidationError"
+error.errors.number.message = "`<your error message>`"
+
+This error stays inside Mongoose at this point—it hasn’t reached Express yet.
+
+#### Express Route
+
+Example POST route:
+
+```js
+app.post("/api/persons", (req, res, next) => {
+  const body = req.body;
+  const newPerson = new Person({ name: body.name, number: body.number });
+
+  newPerson
+    .save()
+    .then((savedPerson) => res.json(savedPerson))
+    .catch((error) => next(error)); // pass the error to middleware
+});
+```
+
+Flow:
+
+- `.save()` triggers Mongoose validation.
+
+- If the validator fails, the **promise rejects** with a `ValidationError`.
+
+The `.catch(next)` block forwards the error to the **Express error-handling middleware.**
+
+#### Error-Handling Middleware
+
+Error handler looks like this:
+
+```js
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return res.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    const firstError = Object.values(error.errors)[0].message;
+    return res.status(400).json({ error: firstError });
+  }
+
+  next(error);
+};
+app.use(errorHandler);
+```
+
+- Checks if the error is a **ValidationError** from Mongoose.
+
+- Extracts the **first error message** from error.errors.
+
+- Returns a **400 Bad Request** with JSON like:
+
+```json
+{
+  "error": "1234567 is not a valid phone number!"
+}
+```
+
+The complete flow from client request to API response:
+
+```bash
+Client POST /api/persons
+        ↓
+Express route receives request
+        ↓
+Mongoose .save() runs custom validator
+        ↓
+Validator fails → Mongoose rejects with ValidationError
+        ↓
+.catch(next) forwards error to error-handling middleware
+        ↓
+Error handler interprets ValidationError → sends HTTP 400 + descriptive message
+        ↓
+Client receives JSON error message
+```
+
+- Validation logic is centralized in the **Mongoose schema**, so all routes automatically enforce phone number rules.
+
+- Express **error-handling middleware** formats the error into a clear HTTP response.
+
+- Users always receive a **descriptive error message**, helping them correct invalid phone numbers.

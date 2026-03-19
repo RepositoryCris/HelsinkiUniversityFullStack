@@ -14,49 +14,63 @@ GET {{baseUrl}}/api/persons
 GET {{baseUrl}}/info
 # Expected: 200 HTML
 
-### Get person with ID 1 (if exists)
-###GET {{baseUrl}}/api/persons/1
-# Expected: 200 JSON or 404 if doesn't exist
-
-### Get person with ID From Mongo DB (if exists)
+### Get person with valid Mongo ID
 GET {{baseUrl}}/api/persons/69ba020a11a37853cfc836e2
 # Expected: 200 JSON or 404 if doesn't exist
 
 ### Get person with non-existent ID
-GET {{baseUrl}}/api/persons/99999
+GET {{baseUrl}}/api/persons/999999999999999999999999
 # Expected: 404 Not Found
 
 ### ==================== DELETE REQUESTS ====================
 
-### Delete person with ID 1 (if exists)
-DELETE {{baseUrl}}/api/persons/1
+### Delete person with valid ID
+DELETE {{baseUrl}}/api/persons/69bc4faf19d856efbeee1c68
 # Expected: 204 No Content or 404 Not Found
 
-### ========= POST REQUESTS =========
+### ==================== POST REQUESTS ====================
 
 ### [SUCCESS] Post a valid new person
-POST {{baseUrl}}/api/persons/
+POST {{baseUrl}}/api/persons
 content-type: application/json
 
 {
     "name": "Unique Test Person",
-    "number": "7777777"
+    "number": "09-1234567"
 }
-### Expected: 200 with new person object
+### Expected: 201 with new person object
 
-
-### [ERROR] Post with missing name
-POST {{baseUrl}}/api/persons/
+### [ERROR] Post with invalid phone number (no dash)
+POST {{baseUrl}}/api/persons
 content-type: application/json
 
 {
-    "number": "7777777"
+    "name": "Invalid Phone",
+    "number": "091234567"
+}
+### Expected: 400 { "error": "091234567 is not a valid phone number!" }
+
+### [ERROR] Post with invalid phone number (wrong format)
+POST {{baseUrl}}/api/persons
+content-type: application/json
+
+{
+    "name": "Invalid Phone 2",
+    "number": "1-22-334455"
+}
+### Expected: 400 { "error": "1-22-334455 is not a valid phone number!" }
+
+### [ERROR] Post with missing name
+POST {{baseUrl}}/api/persons
+content-type: application/json
+
+{
+    "number": "09-1234567"
 }
 ### Expected: 400 { "error": "Name or number missing" }
 
-
 ### [ERROR] Post with missing number
-POST {{baseUrl}}/api/persons/
+POST {{baseUrl}}/api/persons
 content-type: application/json
 
 {
@@ -64,20 +78,18 @@ content-type: application/json
 }
 ### Expected: 400 { "error": "Name or number missing" }
 
-
 ### [ERROR] Post with empty name string
-POST {{baseUrl}}/api/persons/
+POST {{baseUrl}}/api/persons
 content-type: application/json
 
 {
     "name": "",
-    "number": "7777777"
+    "number": "09-1234567"
 }
 ### Expected: 400 { "error": "Name or number missing" }
 
-
 ### [ERROR] Post with empty number string
-POST {{baseUrl}}/api/persons/
+POST {{baseUrl}}/api/persons
 content-type: application/json
 
 {
@@ -86,48 +98,61 @@ content-type: application/json
 }
 ### Expected: 400 { "error": "Name or number missing" }
 
-
-### [ERROR] Post with duplicate name (exact match)
-POST {{baseUrl}}/api/persons/
+### [ERROR] Post with minLength < 3 in name
+POST {{baseUrl}}/api/persons
 content-type: application/json
 
 {
-    "name": "Cristian Junior Developer",
-    "number": "8888888"
+    "name": "Jo",
+    "number": "09-1234567"
 }
-### Expected: 400 { "error": "Name must be unique" }
+### Expected: 400 { "error": "Name must be at least 3 characters long" }
 
-
-### [ERROR] Post with duplicate name (case insensitive)
-POST {{baseUrl}}/api/persons/
-content-type: application/json
-
-{
-    "name": "cristian junior developer",
-    "number": "9999999"
-}
-### Expected: 400 { "error": "Name must be unique" }
-
-
-### [ERROR] Post with minLength < 3 in name (case insensitive)
-POST {{baseUrl}}/api/persons/
-content-type: application/json
-
-{
-    "name": "cr",
-    "number": "666"
-}
-### Expected: 400 { "error": "Name must be unique" }
-
-
-### ========= PUT REQUESTS =========
-
-### [SUCCESS] Put a valid person
-PUT {{baseUrl}}/api/persons/69bb4f238037f33f8ffe0b04
+### [SUCCESS] Post with duplicate name (exact case)
+POST {{baseUrl}}/api/persons
 content-type: application/json
 
 {
     "name": "Unique Test Person",
-    "number": "3333333"
+    "number": "040-22334455"
+}
+### Expected: 400 { "error": "Name must be unique" }
+
+### [SUCCESS] Post with duplicate name (case-insensitive)
+POST {{baseUrl}}/api/persons
+content-type: application/json
+
+{
+    "name": "unique test person",
+    "number": "040-22334456"
+}
+### Expected: 400 { "error": "Name must be unique" }
+
+### ==================== PUT REQUESTS ====================
+
+### [SUCCESS] Put a valid number update
+PUT {{baseUrl}}/api/persons/69bc504219d856efbeee1c76
+content-type: application/json
+
+{
+    "number": "040-22334455"
 }
 ### Expected: 200 JSON
+
+### [ERROR] Put with invalid phone number
+PUT {{baseUrl}}/api/persons/69bc504219d856efbeee1c76
+content-type: application/json
+
+{
+    "number": "123456"
+}
+### Expected: 400 { "error": "123456 is not a valid phone number!" }
+
+### [ERROR] Put with empty number string
+PUT {{baseUrl}}/api/persons/69bc504219d856efbeee1c76
+content-type: application/json
+
+{
+    "number": ""
+}
+### Expected: 400 { "error": "Name or number missing" }
