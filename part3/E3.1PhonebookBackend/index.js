@@ -70,15 +70,7 @@ app.post("/api/persons", (request, response) => {
   if (!body?.name || !body?.number) {
     return response.status(400).json({ error: "Name or number missing" });
   }
-  /*
-  if (
-    persons.find(
-      (person) => person.name.toLowerCase() === body.name.toLowerCase(),
-    )
-  ) {
-    return response.status(400).json({ error: "Name must be unique" });
-  }
-  */
+
   const newPerson = new Person({
     name: body.name,
     number: body.number,
@@ -87,6 +79,23 @@ app.post("/api/persons", (request, response) => {
   newPerson.save().then((savedPerson) => {
     response.json(savedPerson);
   });
+});
+
+app.put("/api/persons/:id", (request, response, next) => {
+  const { number } = request.body;
+
+  Person.findByIdAndUpdate(
+    request.params.id,
+    { number: number },
+    { new: true, runValidators: true },
+  )
+    .then((updatePerson) => {
+      if (!updatePerson) {
+        return response.status(404).end();
+      }
+      response.json(updatePerson);
+    })
+    .catch((error) => next(error));
 });
 
 // Error handler middleware
