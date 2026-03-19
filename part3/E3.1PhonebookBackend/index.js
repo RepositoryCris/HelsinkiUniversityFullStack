@@ -89,6 +89,7 @@ app.post("/api/persons", (request, response) => {
   });
 });
 
+// Error handler middleware
 const errorHandler = (error, request, response, next) => {
   console.error(error.message);
 
@@ -98,8 +99,6 @@ const errorHandler = (error, request, response, next) => {
 
   next(error);
 };
-
-// this has to be the last loaded middleware, also all the routes should be registered before this!
 app.use(errorHandler);
 
 //app.listen
