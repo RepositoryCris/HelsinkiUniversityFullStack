@@ -474,3 +474,70 @@ app.listen(config.PORT, () => {
   logger.info(`Server running on port ${config.PORT}`);
 });
 ```
+
+## 4.3: Helper Functions and Unit Tests, step 1
+
+Create a directory named `utils` and add the file `list_helper.js.` This will house your logic functions.
+
+File: `utils/list_helper.js`
+
+```js
+const dummy = (blogs) => {
+  // This function currently just validates the test setup
+  return 1;
+};
+
+module.exports = {
+  dummy,
+};
+```
+
+### Create the Test File `list_helper.test.js.`
+
+Create a directory named tests and add a file named `list_helper.test.js.` It is a common convention to match the name of the file you are testing.
+
+File: `tests/list_helper.test.js`
+
+```JavaScript
+const { test, describe } = require('node:test')
+const assert = require('node:assert')
+const listHelper = require('../utils/list_helper')
+
+test('dummy returns one', () => {
+  const blogs = []
+
+  const result = listHelper.dummy(blogs)
+  assert.strictEqual(result, 1)
+})
+```
+
+### Run tests
+
+```bash
+node --test tests/list_helper.test.js
+```
+
+## Test library node:test
+
+Define the npm script test for the test execution:
+
+```json
+{
+  // ...
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node --test", //<--Add this line
+    "lint": "eslint ."
+  }
+  // ...
+}
+```
+
+Now, you can simply run
+
+```bash
+npm test
+```
+
+to execute all tests in your project
