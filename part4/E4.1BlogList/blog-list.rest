@@ -1,0 +1,19 @@
+@baseurl = http://localhost:3003
+
+### GET all blogs
+GET {{baseurl}}/api/blogs
+# Expected: 200 OK
+# Body: An array of blog objects (empty [] if first time)
+
+### [SUCCESS] Post a valid new blog
+POST {{baseurl}}/api/blogs
+Content-Type: application/json
+
+{
+  "title": "Systems Engineering in Node",
+  "author": "Cristian Mamani",
+  "url": "https://fullstackopen.com/",
+  "likes": 5
+}
+### Expected: 201 Created
+### Body: The saved blog object including _id and __v
