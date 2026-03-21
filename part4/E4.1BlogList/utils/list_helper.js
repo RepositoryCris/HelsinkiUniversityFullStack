@@ -1,3 +1,5 @@
+const _ = require("lodash");
+
 const dummy = (blogs) => {
   return 1;
 };
@@ -25,8 +27,23 @@ const favoriteBlog = (blogList) => {
   };
 };
 
+const mostBlogs = (blogs) => {
+  if (blogs.length === 0) return null;
+
+  return _.chain(blogs)
+    .countBy("author") // 1. Creates { "Robert C. Martin": 3, "Edsger W. Dijkstra": 1 }
+    .map((count, author) => ({
+      // 2. Transforms each pair into the required object format
+      author: author,
+      blogs: count,
+    }))
+    .maxBy("blogs") // 3. Picks the object with the highest 'blogs' value
+    .value(); // 4. Executes the chain and returns the result
+};
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
+  mostBlogs,
 };

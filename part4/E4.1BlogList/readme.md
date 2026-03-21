@@ -542,7 +542,9 @@ npm test
 
 to execute all tests in your project
 
-## Test describe blocks
+## 4.4: Helper Functions and Unit Tests, step 2
+
+### Test describe blocks
 
 Describe blocks can be used for grouping tests into logical collections.
 
@@ -652,7 +654,9 @@ PS D:\HelsinkiUniversityFullStack\part4\E4.1BlogList> npm test
 ℹ duration_ms 251.0044
 ```
 
-## Node.js Assertion Comparison: `strictEqual` vs `deepStrictEqual`
+## 4.5: Helper Functions and Unit Tests, step 3
+
+### Node.js Assertion Comparison: `strictEqual` vs `deepStrictEqual`
 
 As a system engineer, you can think of this as comparing a **Pointer** versus the **Data** at that pointer.
 
@@ -718,4 +722,56 @@ The computer follows the pointers to the **Heap**. It looks at the bits stored a
 ℹ skipped 0
 ℹ todo 0
 ℹ duration_ms 253.2093
+```
+
+### 4.6: Helper Functions and Unit Tests, step 4
+
+This command installs Lodash as a project dependency.
+
+```bash
+npm install --save lodash
+```
+
+Import and use
+
+```js
+const _ = require("lodash");
+
+const mostBlogs = (blogs) => {
+  if (blogs.length === 0) return null;
+
+  return _.chain(blogs)
+    .countBy("author") // 1. Creates { "Robert C. Martin": 3, "Edsger W. Dijkstra": 1 }
+    .map((count, author) => ({
+      // 2. Transforms each pair into the required object format
+      author: author,
+      blogs: count,
+    }))
+    .maxBy("blogs") // 3. Picks the object with the highest 'blogs' value
+    .value(); // 4. Executes the chain and returns the result
+};
+```
+
+#### Lowdash
+
+| Function        | Purpose                                   | Example                               |
+| :-------------- | :---------------------------------------- | :------------------------------------ |
+| **`_.countBy`** | Counts occurrences of a property.         | `_.countBy(blogs, 'author')`          |
+| **`_.groupBy`** | Groups objects into an object by key.     | `_.groupBy(blogs, 'author')`          |
+| **`_.sumBy`**   | Sums a specific property in an array.     | `_.sumBy(blogs, 'likes')`             |
+| **`_.maxBy`**   | Finds the object with the maximum value.  | `_.maxBy(authors, 'blogs')`           |
+| **`_.map`**     | Transforms a collection into a new array. | `_.map(obj, (val, key) => ({ ... }))` |
+| **`_.chain`**   | Enables method wrapping for sequences.    | `_.chain(blogs)...`                   |
+| **`.value()`**  | Resolves the result of a chain.           | `...value()`                          |
+
+#### The "Chaining" Pattern
+
+Use `_.chain()` to pipe data through multiple transformations. Always end with `.value()`
+
+```JavaScript
+const topAuthor = _.chain(blogs)
+  .countBy('author')
+  .map((count, name) => ({ author: name, blogs: count }))
+  .maxBy('blogs')
+  .value()
 ```
