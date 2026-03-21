@@ -651,3 +651,71 @@ PS D:\HelsinkiUniversityFullStack\part4\E4.1BlogList> npm test
 ℹ todo 0
 ℹ duration_ms 251.0044
 ```
+
+## Node.js Assertion Comparison: `strictEqual` vs `deepStrictEqual`
+
+As a system engineer, you can think of this as comparing a **Pointer** versus the **Data** at that pointer.
+
+### Comparison Table
+
+| Feature           | `assert.strictEqual(a, b)`                                     | `assert.deepStrictEqual(a, b)`                             |
+| :---------------- | :------------------------------------------------------------- | :--------------------------------------------------------- |
+| **Common Name**   | Identity / Reference Equality                                  | Structural / Value Equality                                |
+| **Logic**         | Checks if both variables point to the **same memory address**. | Recursively checks if **all properties and values** match. |
+| **Operator**      | Uses the `===` operator.                                       | Traverses the object tree (Recursive).                     |
+| **Best Used For** | Primitives (Strings, Numbers, Booleans).                       | Objects, Arrays, and Nested Data.                          |
+| **Performance**   | Extremely fast ($O(1)$).                                       | Slower ($O(n)$ where $n$ is the number of properties).     |
+
+---
+
+### The "System Memory" Visualization
+
+Imagine you have two variables, `blog1` and `blog2`, that contain the exact same data.
+
+#### 1. Reference Check (`strictEqual`)
+
+The computer looks at the **Stack**. It sees that `blog1` points to **Address 0x001** and `blog2` points to **Address 0x002**.
+
+- **Result:** **FAIL** ❌. Even though the data is the same, the memory addresses are different.
+
+#### 2. Value Check (`deepStrictEqual`)
+
+The computer follows the pointers to the **Heap**. It looks at the bits stored at `0x001` and compares them bit-by-bit to the bits at `0x002`.
+
+- **Result:** **PASS** ✅. The content matches perfectly.
+
+---
+
+### Use Cases in the Blog Project
+
+- **Use `strictEqual`** when checking `totalLikes`. Since the result is a simple Number (a primitive), you only care if the value is, for example, `12`.
+- **Use `deepStrictEqual`** for `favoriteBlog`. Since you are comparing an object you _created_ in your test to an object _returned_ by your function, they will **never** have the same memory address, but they will have the same content.
+
+### Summary Rule of Thumb
+
+- **Simple Value** (Number/String) $\rightarrow$ `strictEqual`
+- **Structural Value** (Curly Braces `{}` or Brackets `[]`) $\rightarrow$ `deepStrictEqual`
+
+### Result of tests describe blocks
+
+```bash
+✔ dummy returns one (1.698ms)
+▶ total likes
+  ✔ of empty list is zero (0.6304ms)
+  ✔ when list has only one blog, equals the likes of that (0.333ms)
+  ✔ of a bigger list is calculated correctly (0.2582ms)
+✔ total likes (2.0812ms)
+▶ most likes
+  ✔ of empty list is null (2.7326ms)
+  ✔ when list has only one blog, equals that blog (1.267ms)
+  ✔ of a bigger list finds the correct favorite (0.5393ms)
+✔ most likes (5.1433ms)
+ℹ tests 7
+ℹ suites 2
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 253.2093
+```
