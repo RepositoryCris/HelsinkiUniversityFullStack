@@ -36,7 +36,7 @@ test("a specific blog is within the returned blogs", async () => {
 test("a valid blog can be added ", async () => {
   const newBlog = {
     title: "async/await functions",
-    author: "Cristian Mamani Aguirre",
+    author: "Cristian Mamani Aguirre Junior Developer",
     url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function",
     likes: 7,
   };
