@@ -4,16 +4,20 @@
   "description": "Blog list",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js",
-    "test": "node --test"
+    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "cross-env NODE_ENV=development node --watch index.js",
+    "test": "cross-env NODE_ENV=test node --test"
   },
   "author": "Cristian Mamani Aguirre",
   "license": "ISC",
   "dependencies": {
+    "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "lodash": "^4.17.23",
     "mongoose": "^9.3.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2"
   }
 }

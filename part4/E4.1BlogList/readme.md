@@ -724,7 +724,7 @@ The computer follows the pointers to the **Heap**. It looks at the bits stored a
 ℹ duration_ms 253.2093
 ```
 
-### 4.6: Helper Functions and Unit Tests, step 4
+## 4.6-7: Helper Functions and Unit Tests, step 4
 
 This command installs Lodash as a project dependency.
 
@@ -752,7 +752,7 @@ const mostBlogs = (blogs) => {
 };
 ```
 
-#### Lowdash
+### Lowdash
 
 | Function        | Purpose                                   | Example                               |
 | :-------------- | :---------------------------------------- | :------------------------------------ |
@@ -764,7 +764,7 @@ const mostBlogs = (blogs) => {
 | **`_.chain`**   | Enables method wrapping for sequences.    | `_.chain(blogs)...`                   |
 | **`.value()`**  | Resolves the result of a chain.           | `...value()`                          |
 
-#### The "Chaining" Pattern
+### The "Chaining" Pattern
 
 Use `_.chain()` to pipe data through multiple transformations. Always end with `.value()`
 
@@ -775,3 +775,405 @@ const topAuthor = _.chain(blogs)
   .maxBy('blogs')
   .value()
 ```
+
+## 4.8 Blog List Tests, step 1
+
+### Configurations to implement a test environment with its own database
+
+Change the scripts in the blogs application `package.json` file, so that when tests are run, `NODE_ENV` gets the value test:
+
+```json
+{
+  // ...
+  "scripts": {
+    "start": "NODE_ENV=production node index.js", //check
+    "dev": "NODE_ENV=development node --watch index.js", //check
+    "test": "NODE_ENV=test node --test", //add this
+    "lint": "eslint ."
+  }
+  // ...
+}
+```
+
+There is a slight issue in the way that we have specified the mode of the application in our scripts: it will not work on Windows. We can correct this by installing the `cross-env` package as a project dependency using the command:
+
+```bash
+npm install cross-env
+```
+
+We can then achieve cross-platform compatibility by using the cross-env library in our npm scripts defined in `package.json`
+
+```json
+{
+  // ...
+  "scripts": {
+    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "cross-env NODE_ENV=development node --watch index.js",
+    "test": "cross-env  NODE_ENV=test node --test",
+    "lint": "eslint ."
+  }
+  // ...
+}
+```
+
+Now we can modify the way that our application runs in different modes.
+
+**_As an example of this, we could define the application to use a separate test database when it is running tests._**
+
+Let's make some changes to the module that defines the application's configuration in utils/config.js:
+
+```js
+require("dotenv").config();
+
+const PORT = process.env.PORT;
+
+const MONGODB_URI = //
+  process.env.NODE_ENV === "test" //
+    ? process.env.TEST_MONGODB_URI //
+    : process.env.MONGODB_URI; //
+
+module.exports = {
+  MONGODB_URI,
+  PORT,
+};
+```
+
+The `.env` file has separate variables for the database addresses of the **development** and **test** _databases_:
+
+```bash
+MONGODB_URI=mongodb+srv://fullstack:thepasswordishere@cluster0.a5qfl.mongodb.net/blogApp?retryWrites=true&w=majority&appName=Cluster0
+PORT=3001
+
+TEST_MONGODB_URI=mongodb+srv://fullstack:thepasswordishere@cluster0.a5qfl.mongodb.net/testBlogApp?retryWrites=true&w=majority&appName=Cluster0
+```
+
+Just create a new data base for test called `testBlogList` with your own credentials and user
+
+### Supertest
+
+Use the **supertest package** to help us write our tests for testing the API.
+
+```bash
+npm install --save-dev supertest
+```
+
+Write the first test in the `tests/blogs_api.test.js` file:
+
+```js
+const { test, after } = require("node:test");
+const mongoose = require("mongoose");
+const supertest = require("supertest");
+const app = require("../app");
+
+const api = supertest(app);
+
+test("blogs are returned as json", async () => {
+  await api
+    .get("/api/blogs")
+    .expect(200)
+    .expect("Content-Type", /application\/json/);
+});
+
+after(async () => {
+  await mongoose.connection.close();
+});
+```
+
+The test imports the Express application from the app.js module and **wraps it with the supertest function into a so-called superagent object**.
+This object is assigned to the api variable and tests can use it for making HTTP requests to the backend.
+
+- The test makes an HTTP GET request to the api/notes url
+- Verifies that the request is responded to with the status code 200
+- erifies that the Content-Type header is set to application/json, indicating that the data is in the desired format
+
+Checking the value of the header uses a bit strange looking syntax:
+
+```js
+.expect('Content-Type', /application\/json/)
+```
+
+**The desired value is now defined as regular expression or in short regex.**
+
+_The regex starts and ends with a slash /_, and because the **desired string application/json** also contains the same slash, it is **preceded by a \ so** that it is not interpreted as a regex termination character.
+
+In principle, the test could also have been defined as a string
+
+```bash
+.expect('Content-Type', 'application/json')copy
+```
+
+The **problem** here, however, is that when using a string, the **value of the header must be exactly the same**.
+
+- For **the regex we defined**, it is acceptable that the **header contains the string in question.**
+- The actual value of the header is **application/json; charset=utf-8**, i.e. it **also contains information about character encoding**.
+- However, the test is not interested in this and therefore it is **better to define the test as a regex instead of an exact string**.
+
+The async/await syntax is related to the fact that making a request to the API is an asynchronous operation.
+The async/await syntax can be used for writing asynchronous code with the appearance of synchronous code.
+
+Once all the tests have finished running we have to close the database connection used by Mongoose. Without this, the test program will not terminate.
+
+This can be easily achieved with the after method:
+
+```js
+after(async () => {
+  await mongoose.connection.close();
+});
+```
+
+The documentation for supertest says the following:
+
+_if the server is not already listening for connections then it is bound to an ephemeral port for you so there is no need to keep track of ports._
+
+#### The "Logic" vs. The "Port"
+
+In a typical Express project, you usually have two main files for starting the app:
+
+- `app.js`: This contains all your middleware, routes (like `/api/blogs`), and database connections. It defines how the app behaves, but it doesn't actually "start" the engine.
+
+- `index.js`: This is where you call `app.listen(3003)`. This tells the app to sit and wait for requests on a specific port.
+
+When you import `app` into your test file, you are **importing the logic**, not the **running process**.
+
+#### What SuperTest does (The "Ephemeral Port")
+
+When you run `const api = supertest(app)`, SuperTest takes your Express app and handles the "starting" part for you internally.
+
+- **Ephemeral Port:** Instead of using port 3003 (which might be busy if you are running the app in another terminal), SuperTest asks the Operating System for any random, available port (e.g., 54231).
+
+- **Automated Lifecycle:** It starts the server on that random port, sends your test request (like GET /api/blogs), gets the response, and then **immediately shuts the server down**.
+
+#### Why is this better?
+
+| Feature           | Manual Testing (Postman)                    | SuperTest Logic                                 |
+| :---------------- | :------------------------------------------ | :---------------------------------------------- |
+| **Port Conflict** | If port 3003 is taken, the app crashes.     | Uses a random port; never conflicts.            |
+| **Speed**         | You have to manually start/stop the server. | Starts and stops in milliseconds automatically. |
+| **Environment**   | Usually runs on your "Dev" database.        | Can easily point to your "Test" database.       |
+
+In your `tests/blog_api.test.js`, you don't need to worry about `app.listen()`. By passing `app` to `supertest(app)`, you are giving the library a "blueprint" of your API. SuperTest builds a temporary, private bridge to that blueprint every time you run a test.
+
+Your tests will work even if your main server is turned off, because SuperTest is essentially spinning up a "ghost" version of your app just for the duration of the test.
+
+Add tests and then we will add the list
+
+```js
+const assert = require("node:assert");
+// ...
+
+test("all blogs are returned", async () => {
+  const response = await api.get("/api/blogs");
+
+  assert.strictEqual(response.body.length, initialBlogs.length);
+});
+
+test("a specific blog is within the returned blogs", async () => {
+  const response = await api.get("/api/blogs");
+
+  const contents = response.body.map((e) => e.content);
+  assert(contents.includes("React patterns"));
+});
+```
+
+The middleware that outputs information about the HTTP requests is obstructing the test execution output. Let us modify the logger so that it does not print to the console in test mode:
+
+```js
+const info = (...params) => {
+  if (process.env.NODE_ENV !== "test") {
+    console.log(...params);
+  }
+};
+
+const error = (...params) => {
+  if (process.env.NODE_ENV !== "test") {
+    console.error(...params);
+  }
+};
+
+module.exports = {
+  info,
+  error,
+};
+```
+
+### Initializing the database before tests
+
+Currently, our tests have an issue where their success depends on the state of the database.
+
+Let's initialize the database before every test with the `beforeEach` function:
+
+```js
+const assert = require("node:assert");
+const { test, after, beforeEach } = require("node:test"); //<--
+const { test, after } = require("node:test");
+const mongoose = require("mongoose");
+const supertest = require("supertest");
+const app = require("../app");
+const Blog = require("../models/blog"); //<--
+
+const api = supertest(app);
+
+const initialBlogs = [
+  //<--
+  {
+    title: "Canonical string reduction",
+    author: "Edsger W. Dijkstra",
+    url: "http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
+    likes: 12,
+  },
+  {
+    title: "First class tests",
+    author: "Robert C. Martin",
+    url: "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
+    likes: 10,
+  },
+  {
+    title: "React patterns",
+    author: "Michael Chan",
+    url: "https://reactpatterns.com/",
+    likes: 7,
+  },
+];
+
+beforeEach(async () => {
+  //<--
+  await Blog.deleteMany({});
+  let blogObject = new Note(initialBlogs[0]);
+  await blogObject.save();
+  blogObject = new Note(initialBlogs[1]);
+  await blogObject.save();
+});
+
+test("blogs are returned as json", async () => {
+  await api
+    .get("/api/blogs")
+    .expect(200)
+    .expect("Content-Type", /application\/json/);
+});
+
+test("all blogs are returned", async () => {
+  const response = await api.get("/api/blogs");
+
+  assert.strictEqual(response.body.length, initialBlogs.length);
+});
+
+test("a specific blog is within the returned blogs", async () => {
+  const response = await api.get("/api/blogs");
+
+  const contents = response.body.map((e) => e.content);
+  assert(contents.includes("React patterns"));
+});
+
+after(async () => {
+  await mongoose.connection.close();
+});
+```
+
+The database is cleared out at the beginning, and after that, we save the two notes stored in the initialNotes array to the database. By doing this, we ensure that the database is in the same state before every test is run.
+
+### Running tests one by one
+
+The npm test command executes all of the tests for the application. When we are writing tests, it is usually **wise to only execute one or two tests.**
+
+There are a few different ways of accomplishing this, one of which is the **only** method. With this method we can define in the code what tests should be executed:
+
+```js
+test.only("blogs are returned as json", async () => {
+  await api
+    .get("/api/blogs")
+    .expect(200)
+    .expect("Content-Type", /application\/json/);
+});
+
+test.only("all blogs are returned", async () => {
+  const response = await api.get("/api/blogs");
+
+  assert.strictEqual(response.body.length, initialBlogs.length);
+});
+```
+
+When tests are run with option --test-only, that is, with the command:
+
+```bash
+npm test -- --test-only
+```
+
+The danger of `only` is that **one forgets to remove those from the code.**
+
+Another option is to specify the tests that need to be run as arguments of the npm test command.
+
+The following command only runs the tests found in the `tests/blog_api.test.js` file:
+
+```bash
+npm test -- tests/note_api.test.jscopy
+```
+
+The `--test-name-pattern` option can be used for running tests with a specific name:
+
+```bash
+npm test -- --test-name-pattern="a specific blog is within the returned blogs"
+```
+
+The provided argument can refer to the name of the test or the describe block. It can also contain just a part of the name. The following command will run all of the tests that contain blogs in their name:
+
+```bash
+npm run test -- --test-name-pattern="blogs"
+```
+
+### async/await
+
+The async/await syntax that was introduced in ES7 makes it possible to use asynchronous functions that return a promise in a way that makes the code look synchronous.
+
+- `async`: A keyword placed before a function declaration. It ensures the function **always returns a promise**. Even if you return a simple string, JavaScript wraps it in a resolved promise automatically.
+
+- `await`: A keyword used only inside an async function. it tells JavaScript to **pause execution** at that line until the Promise settles (either resolves or rejects). Once resolved, it returns the result of the promise as a normal value.
+
+### Rules to Remember
+
+- **Await needs Async:** You cannot use `await` in a regular function; the parent function must be marked `async`.
+
+- **Non-Blocking:** Even though the code "pauses" at the `await` line, the JavaScript event loop is still free to handle other requests. It doesn't freeze your whole server.
+
+- **Error Handling:** Instead of `.catch()`, you use standard `try/catch` blocks around your `await` calls to handle errors.
+
+### How to Run the Tests
+
+Here is the correct way to run your tests while staying safely inside the **test database**:
+
+- **Run EVERYTHING**
+  This runs all files in your `tests` folder using the test database.
+
+```Bash
+npm test
+```
+
+- **Run a SPECIFIC FILE**
+  If you want to run only `blogs_api.test.js` without touching your other logic tests, use the -- separator. This tells npm to pass the following arguments directly to the node command _inside_ the script.
+
+```Bash
+npm test -- tests/blogs_api.test.js
+```
+
+**_"it is better to not execute them all, only execute the ones you are working on."_ To save time and keep your Atlas cluster from hitting connection limits**
+
+- **Run a SINGLE TEST by name**
+  If you are debugging one specific failing test and don't want to wait for the others, combine the pattern flag with the file path:
+
+```Bash
+npm test -- --test-name-pattern="a blog can be deleted" tests/blogs_api.test.js
+```
+
+**Why the `--` is important**
+Think of `npm test` as a specialized container.
+
+- Everything **inside** the container knows it's in "test mode" (`NODE_ENV=test`).
+
+- The `--` acts like a door. Anything you type **after** it gets thrown inside that container and attached to the command `node --test`.
+
+When you ran `npm test`, the following chain occurred:
+
+1. `cross-env` set `NODE_ENV` to `test`.
+2. `utils/config.js` saw that value and picked `TEST_MONGODB_URI`.
+3. `mongoose` connected to `testBlogList`.
+4. Your `beforeEach` wiped the **test database** and inserted the `helper` blogs.
+5. Your production `blogList` database stayed exactly as it was.
