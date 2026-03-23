@@ -55,7 +55,7 @@ test("a valid blog can be added ", async () => {
   assert(titles.includes("async/await functions"));
 });
 
-test("blog without content is not added", async () => {
+test("blog without title is not added", async () => {
   const newBlog = {
     url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function",
   };
@@ -76,7 +76,7 @@ test("a specific blog can be viewed", async () => {
     .expect(200)
     .expect("Content-Type", /application\/json/);
 
-  assert.deepStrictEqual(resultBlog.body, blogToView); //i may need JSON.parse(JSON.stringify(blogToView)) if no, delete this comment
+  assert.deepStrictEqual(resultBlog.body, blogToView);
 });
 
 test("a blog can be deleted", async () => {
@@ -91,6 +91,17 @@ test("a blog can be deleted", async () => {
   assert(!ids.includes(blogToDelete.id));
 
   assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1);
+});
+
+test("unique identifier property is named id", async () => {
+  const response = await api.get("/api/blogs");
+
+  // Check the first blog in the response
+  const blogToDiagnostics = response.body[0];
+
+  assert.ok(blogToDiagnostics.id);
+  assert.strictEqual(typeof blogToDiagnostics._id, "undefined");
+  assert.strictEqual(typeof blogToDiagnostics.__v, "undefined");
 });
 
 after(async () => {

@@ -1177,3 +1177,52 @@ When you ran `npm test`, the following chain occurred:
 3. `mongoose` connected to `testBlogList`.
 4. Your `beforeEach` wiped the **test database** and inserted the `helper` blogs.
 5. Your production `blogList` database stayed exactly as it was.
+
+## 4.9 Blog List Tests, step 2
+
+Write a test that verifies that the unique identifier property of the blog posts is named id, by default the database names the property \_id.
+
+Update your `models/blog.js`:
+
+```JavaScript
+const blogSchema = new mongoose.Schema({
+  title: String,
+  author: String,
+  url: String,
+  likes: Number
+})
+
+// Add the transformation logic here
+blogSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString()
+    delete returnedObject._id
+    delete returnedObject.__v
+  }
+})
+
+module.exports = mongoose.model('Blog', blogSchema)
+```
+
+- Write the Test
+  Add this new test case to your `tests/blogs_api.test.js`.
+  This test fetches the blogs and checks if the first object has a property named `id` and does _not_ have `_id`.
+
+```JavaScript
+test('unique identifier property is named id', async () => {
+const response = await api.get('/api/blogs')
+
+// Check the first blog in the response
+const blogToDiagnostics = response.body[0]
+
+assert.ok(blogToDiagnostics.id)
+assert.strictEqual(typeof blogToDiagnostics._id, 'undefined')
+assert.strictEqual(typeof blogToDiagnostics.__v, 'undefined')
+})
+```
+
+Now, run the specific test file to confirm it passes without running your entire suite of 21 tests:
+
+```Bash
+npm test -- tests/blogs_api.test.js
+```
