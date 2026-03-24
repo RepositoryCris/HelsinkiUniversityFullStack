@@ -98,10 +98,12 @@ test("a blog can be deleted", async () => {
 
   const blogsAtEnd = await helper.blogsInDb();
 
+  // 1. Verify count decreased
+  assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1);
+
+  // 2. Verify the specific ID is truly gone (the most reliable check)
   const ids = blogsAtEnd.map((b) => b.id);
   assert(!ids.includes(blogToDelete.id));
-
-  assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1);
 });
 
 test("unique identifier property is named id", async () => {

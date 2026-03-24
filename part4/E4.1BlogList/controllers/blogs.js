@@ -25,6 +25,7 @@ blogsRouter.post("/", async (request, response) => {
 
 blogsRouter.delete("/:id", async (request, response) => {
   await Blog.findByIdAndDelete(request.params.id);
+  // REST convention: 204 No Content for successful deletion
   response.status(204).end();
 });
 
