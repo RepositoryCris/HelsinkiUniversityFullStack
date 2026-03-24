@@ -1226,3 +1226,54 @@ Now, run the specific test file to confirm it passes without running your entire
 ```Bash
 npm test -- tests/blogs_api.test.js
 ```
+
+## 4.11 Blog List Tests, step 4
+
+Write a test that verifies that if the likes property is missing from the request, it will default to the value 0. Do not test the other properties of the created blogs yet.
+
+### Update the Schema
+
+Modify the `likes` definition to include a `default` value. This is the most efficient fix because it happens automatically at the database layer.
+
+```JavaScript
+// models/blog.js
+
+const blogSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  author: String,
+  url: {
+    type: String,
+    required: true
+  },
+  likes: {
+    type: Number,
+    default: 0  // <--- This ensures if 'likes' is missing, it becomes 0
+  }
+})
+
+```
+
+Add this test
+
+```js
+test("if the likes property is missing, it defaults to 0", async () => {
+  const newBlog = {
+    title: "Testing default likes",
+    author: "Cristian Aguirre",
+    url: "https://fullstackopen.com/",
+    // likes is intentionally missing
+  };
+
+  const response = await api
+    .post("/api/blogs")
+    .send(newBlog)
+    .expect(201)
+    .expect("Content-Type", /application\/json/);
+
+  // Verify the response body directly
+  assert.strictEqual(response.body.likes, 0);
+});
+```

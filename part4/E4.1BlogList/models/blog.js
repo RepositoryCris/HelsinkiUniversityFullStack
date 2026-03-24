@@ -13,7 +13,10 @@ const blogSchema = mongoose.Schema({
     type: String,
     required: true,
   },
-  likes: Number,
+  likes: {
+    type: Number,
+    default: 0, // <--- This ensures if 'likes' is missing, it becomes 0
+  },
 });
 
 blogSchema.set("toJSON", {
