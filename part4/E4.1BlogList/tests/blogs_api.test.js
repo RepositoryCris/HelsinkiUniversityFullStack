@@ -55,15 +55,26 @@ test("a valid blog can be added ", async () => {
   assert(titles.includes("async/await functions"));
 });
 
-test("blog without title is not added", async () => {
-  const newBlog = {
-    url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function",
+test("blog without title or url is not added", async () => {
+  const newBlogNoTitle = {
+    author: "Cristian Mamani Aguirre",
+    url: "https://fullstackopen.com/",
+    likes: 5,
   };
 
-  await api.post("/api/blogs").send(newBlog).expect(400);
+  const newBlogNoUrl = {
+    title: "Testing missing URL",
+    author: "Cristian Aguirre",
+    likes: 5,
+  };
+
+  // Test missing title
+  await api.post("/api/blogs").send(newBlogNoTitle).expect(400);
+
+  // Test missing url
+  await api.post("/api/blogs").send(newBlogNoUrl).expect(400);
 
   const blogsAtEnd = await helper.blogsInDb();
-
   assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length);
 });
 
