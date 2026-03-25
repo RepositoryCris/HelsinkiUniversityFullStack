@@ -1277,3 +1277,766 @@ test("if the likes property is missing, it defaults to 0", async () => {
   assert.strictEqual(response.body.likes, 0);
 });
 ```
+
+## Mongoose schema for users
+
+Define the model for representing a user in the `models/user.js` file:
+
+```js
+const mongoose = require("mongoose");
+
+const userSchema = new mongoose.Schema({
+  username: String,
+  name: String,
+  passwordHash: String,
+  blogs: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Blog",
+    },
+  ],
+});
+
+userSchema.set("toJSON", {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString();
+    delete returnedObject._id;
+    delete returnedObject.__v;
+    // the passwordHash should not be revealed
+    delete returnedObject.passwordHash;
+  },
+});
+
+const User = mongoose.model("User", userSchema);
+
+module.exports = User;
+```
+
+The field type is ObjectId, meaning it refers to another document. The ref field specifies the name of the model being referenced. Mongo does not inherently know that this is a field that references blogs, the syntax is purely related to and defined by Mongoose.
+
+Let's expand the schema of the blog defined in the models/blog.js file so that the blog contains information about the user who created it:
+
+```js
+//...
+   likes: {
+    type: Number,
+    default: 0, // <--- This ensures if 'likes' is missing, it becomes 0
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+//...
+```
+
+## Creating users
+
+Let's implement a route for creating new users. Users have a unique username, a name and something called a passwordHash. The password hash is the output of a one-way hash function applied to the user's password. It is never wise to store unencrypted plain text passwords in the database!
+
+Let's install the bcrypt package for generating the password hashes:
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part4\E4.1BlogList> npm install bcrypt
+
+added 3 packages, and audited 116 packages in 5s
+
+28 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+```
+
+Define a separate router for dealing with users in a new `controllers/users.js` file
+
+Let's take the router into use in our application in the `app.js` file, so that it handles requests made to the `/api/users` url:
+
+```js
+// ...
+const blogsRouter = require("./controllers/blogs");
+
+const usersRouter = require("./controllers/users");
+
+// ...
+
+app.use("/api/blogs", blogsRouter);
+
+app.use("/api/users", usersRouter);
+
+// ...
+```
+
+The contents of the file, controllers/users.js, that defines the router is as follows:
+
+```js
+const bcrypt = require("bcrypt");
+const usersRouter = require("express").Router();
+const User = require("../models/user");
+
+usersRouter.post("/", async (request, response) => {
+  const { username, name, password } = request.body;
+
+  const saltRounds = 10;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
+  const user = new User({
+    username,
+    name,
+    passwordHash,
+  });
+
+  const savedUser = await user.save();
+
+  response.status(201).json(savedUser);
+});
+
+module.exports = usersRouter;
+```
+
+The new feature can and should initially be tested manually with a tool like Postman. However testing things manually will quickly become too cumbersome, especially once we implement functionality that enforces usernames to be unique.
+
+It takes much less effort to write automated tests, and it will make the development of our application much easier.
+
+Our initial tests could look like this:
+
+```js
+const bcrypt = require("bcrypt");
+const User = require("../models/user");
+
+//...
+
+describe("when there is initially one user in db", () => {
+  beforeEach(async () => {
+    await User.deleteMany({});
+
+    const passwordHash = await bcrypt.hash("sekret", 10);
+    const user = new User({ username: "root", passwordHash });
+
+    await user.save();
+  });
+
+  test("creation succeeds with a fresh username", async () => {
+    const usersAtStart = await helper.usersInDb();
+
+    const newUser = {
+      username: "mluukkai",
+      name: "Matti Luukkainen",
+      password: "salainen",
+    };
+
+    await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(201)
+      .expect("Content-Type", /application\/json/);
+
+    const usersAtEnd = await helper.usersInDb();
+    assert.strictEqual(usersAtEnd.length, usersAtStart.length + 1);
+
+    const usernames = usersAtEnd.map((u) => u.username);
+    assert(usernames.includes(newUser.username));
+  });
+});
+```
+
+The tests use the usersInDb() helper function that we implemented in the `tests/test_helper.js` file. The function is used to help us verify the state of the database after a user is created:
+
+```js
+const User = require("../models/user");
+
+// ...
+
+const usersInDb = async () => {
+  const users = await User.find({});
+  return users.map((u) => u.toJSON());
+};
+
+module.exports = {
+  initialNotes,
+  nonExistingId,
+  notesInDb,
+  usersInDb,
+};
+```
+
+The beforeEach block adds a user with the username root to the database. We can write a new test that verifies that a new user with the same username can not be created:
+
+```js
+describe("when there is initially one user in db", () => {
+  // ...
+
+  test("creation fails with proper statuscode and message if username already taken", async () => {
+    const usersAtStart = await helper.usersInDb();
+
+    const newUser = {
+      username: "root",
+      name: "Superuser",
+      password: "salainen",
+    };
+
+    const result = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/);
+
+    const usersAtEnd = await helper.usersInDb();
+    assert(result.body.error.includes("expected `username` to be unique"));
+
+    assert.strictEqual(usersAtEnd.length, usersAtStart.length);
+  });
+});
+```
+
+The test case obviously will not pass at this point. We are essentially practicing **test-driven development (TDD)**, where tests for new functionality are written before the functionality is implemented.
+
+Mongoose validations do not provide a direct way to check the uniqueness of a field value. However, it is possible to achieve uniqueness by defining `uniqueness index` for a field. The definition is done as follows:
+
+```js
+const mongoose = require("mongoose");
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String, //
+    required: true, //
+    unique: true, // this ensures the uniqueness of username
+  }, //
+  name: String,
+  passwordHash: String,
+  blogs: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Blog",
+    },
+  ],
+});
+
+// ...
+```
+
+Uniqueness indexes fail to create if duplicate data already exists—ensure the database is clean beforehand.
+Unlike standard Mongoose validations, duplicate violations throw a `MongoServerError`, so the error handler must be extended to handle this case.
+
+```js
+const errorHandler = (error, request, response, next) => {
+  logger.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
+  } else if (
+    //
+    error.name === "MongoServerError" &&
+    error.message.includes("E11000 duplicate key error")
+  ) {
+    //
+    return response
+      .status(400)
+      .json({ error: "expected `username` to be unique" }); //
+  } //
+
+  next(error);
+};
+```
+
+After these changes, the tests will pass.
+
+Before we move onward, let's add an initial implementation of a route handler that returns all of the users in the database:
+
+```js
+usersRouter.get("/", async (request, response) => {
+  const users = await User.find({});
+  response.json(users);
+});
+```
+
+For making new users in a production or development environment, you may send a POST request to /api/users/ via Postman or REST Client in the following format:
+
+```json
+{
+  "username": "root",
+  "name": "Superuser",
+  "password": "salainen"
+}
+```
+
+Test with rest client:
+
+```bash
+HTTP/1.1 201 Created
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 81
+ETag: W/"51-PZ3ulkCsSUL/IbFi7jwkcjDlI3k"
+Date: Wed, 25 Mar 2026 00:08:33 GMT
+Connection: close
+
+{
+  "username": "root",
+  "name": "Superuser",
+  "blogs": [],
+  "id": "69c3278153f22852f28b7859"
+}
+```
+
+The console looks like this:
+
+```bash
+[dotenv@17.3.1] injecting env (3) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+connecting to mongodb+srv://fullstack_db_user:JybRTpccMzTlf8Zu@cluster0.i0zdjs6.mongodb.net/blogList?appName=Cluster0
+Server running on port 3003
+connected to MongoDB
+Method: POST
+Path:   /api/users/
+Body:   { username: 'root', name: 'Superuser', password: 'salainen' }
+---
+```
+
+And in mongoDB a collection users was created
+
+```json
+{
+  "_id": {
+    "$oid": "69c3278153f22852f28b7859"
+  },
+  "username": "root",
+  "name": "Superuser",
+  "passwordHash": "$2b$10$29DxaJEdoo72YUi4SeKW9efXgP6m.VsTMdNkwKXOQA4MqCk5azs2i",
+  "blogs": [],
+  "__v": 0
+}
+```
+
+## Creating a new blog
+
+The code for creating a new note has to be updated so that the note is assigned to the user who created it.
+
+Let's expand our current implementation in `controllers/blogs.js` so that the information about the user who created a blog is sent in the userId field of the request body:
+
+```js
+blogsRouter.post("/", async (request, response) => {
+  const body = request.body;
+
+  const user = await User.findById(body.userId);
+
+  if (!user) {
+    return response.status(400).json({ error: "userId missing or not valid" });
+  }
+
+  const blog = new Blog({
+    title: body.title,
+    author: body.author,
+    url: body.url,
+    likes: body.likes,
+    user: user._id,
+  });
+
+  const savedBlog = await blog.save();
+  user.blogs = user.blogs.concat(savedNote._id);
+  await user.save();
+
+  response.status(201).json(savedBlog);
+});
+```
+
+The database is first queried for a user using the userId provided in the request. If the user is not found, the response is sent with a status code of 400 (Bad Request) and an error message: `"userId missing or not valid"`.
+
+It's worth noting that the user object also changes. The id of the blog is stored in the blogs field of the user object:
+
+```js
+const user = await User.findById(body.userId);
+
+// ...
+
+user.blogs = user.blogs.concat(savedNote._id);
+await user.save();
+```
+
+Let's try to create a new note
+
+```bash
+### [SUCCESS] Post a valid new blog
+POST {{baseurl}}/api/blogs/
+Content-Type: application/json
+
+{
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": "0",
+    "userId": "69c3278153f22852f28b7859"
+}
+### Expected: 201 Created
+```
+
+Result
+
+```bash
+HTTP/1.1 201 Created
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 224
+ETag: W/"e0-+dk7e97PiJJfdDzfoyalVpCXr0I"
+Date: Wed, 25 Mar 2026 01:01:05 GMT
+Connection: close
+
+{
+  "title": "User id of the blog creator is at the start sent along the request",
+  "author": "Cristian Mamani Aguirre",
+  "url": "https://fullstackopen.com/",
+  "likes": 0,
+  "user": "69c3278153f22852f28b7859",
+  "id": "69c333d17e41aff1b0dc1a3d"
+}
+```
+
+If you see this data in users in mongoDB there are four blogs added to this user
+
+```bash
+_id: ObjectId('69c3278153f22852f28b7859')
+username: "root"
+name: "Superuser"
+passwordHash: "$2b$10$29DxaJEd0o72YUi4SeKW9efXgP6m.VsTMdNkwKXOQA4MqCk5azs2i"
+blogs: Array (4)
+  0: ObjectId('69c333547e41aff1b0dcla31')
+  1: ObjectId('69c333647e41aff1b0dcla35')
+  2: ObjectId('69c333687e41aff1b0dcla39')
+  3: ObjectId('69c333d17e41aff1b0dcla3d')
+__v: 4
+```
+
+The operation appears to work.
+
+Likewise, the ids of the users who created the blogs can be seen when we visit the route for fetching all notes:
+
+```bash
+_id: ObjectId('69c333547e41aff1b0dcla31')
+title: "User id of the blog creator is at the start sent along the request"
+author: "Cristian Mamani Aguirrer"
+url: "https://fullstackopen.com/"
+likes: 0
+user: ObjectId('69c3278153f22852f28b7859')
+__v: 0
+
+
+_id: ObjectId('69c333647e41aff1b0dcla35')
+title: "User id of the blog creator is at the start sent along the request"
+author: "Cristian Mamani Aguirrer"
+url: "https://fullstackopen.com/"
+likes: 0
+user: ObjectId('69c3278153f22852f28b7859')
+__v: 0
+
+
+_id: ObjectId('69c333687e41aff1b0dcla39')
+title: "User id of the blog creator is at the start sent along the request"
+author: "Cristian Mamani Aguirrer"
+url: "https://fullstackopen.com/"
+likes: 0
+user: ObjectId('69c3278153f22852f28b7859')
+__v: 0
+
+
+_id: ObjectId('69c333d17e41aff1b0dcla3d')
+title: "User id of the blog creator is at the start sent along the request"
+author: "Cristian Mamani Aguirrer"
+url: "https://fullstackopen.com/"
+likes: 0
+user: ObjectId('69c3278153f22852f28b7859')
+__v: 0
+```
+
+Now look in the web http://localhost:3003/api/blogs/
+
+```json
+[
+  {
+    "title": "First class tests",
+    "author": "Robert C. Martin",
+    "url": "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
+    "likes": 10,
+    "id": "69c1c95d2be88c91698d0c50"
+  },
+  {
+    "title": "React patterns",
+    "author": "Michael Chan",
+    "url": "https://reactpatterns.com/",
+    "likes": 7,
+    "id": "69c1c95d2be88c91698d0c51"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": "69c3278153f22852f28b7859",
+    "id": "69c333547e41aff1b0dc1a31"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": "69c3278153f22852f28b7859",
+    "id": "69c333647e41aff1b0dc1a35"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": "69c3278153f22852f28b7859",
+    "id": "69c333687e41aff1b0dc1a39"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": "69c3278153f22852f28b7859",
+    "id": "69c333d17e41aff1b0dc1a3d"
+  }
+]
+```
+
+And also users:
+
+```json
+[
+  {
+    "username": "root",
+    "name": "Superuser",
+    "blogs": [
+      "69c333547e41aff1b0dc1a31",
+      "69c333647e41aff1b0dc1a35",
+      "69c333687e41aff1b0dc1a39",
+      "69c333d17e41aff1b0dc1a3d"
+    ],
+    "id": "69c3278153f22852f28b7859"
+  }
+]
+```
+
+## Populate
+
+- Relational DB: Uses transactional JOIN queries (consistent state)
+
+- MongoDB + Mongoose: Uses populate() method, which executes multiple separate queries (no transactional guarantee — data may change during the process)
+
+Update the route in `controllers/users.js` using Mongoose's `populate()`.
+
+```js
+usersRouter.get("/", async (request, response) => {
+  const users = await User.find({}).populate("blogs"); //
+  response.json(users); //
+});
+```
+
+### How populate() Works
+
+- Chained after `find()` to modify the query result
+
+- **Argument:** Specifies which field (e.g., `blogs`) should have its IDs replaced with actual document references
+
+- **Process:**
+  1. Queries the **users** collection for all users
+  2. Queries the **blogs** collection (or whatever `ref` property points to in the schema) for documents matching the IDs
+
+- The result combines both queries, replacing ID references with full document objects
+
+The result is this, now we can see the ids and the blogs
+The result is almost exactly what we wanted:
+
+```json
+[
+  {
+    "username": "root",
+    "name": "Superuser",
+    "blogs": [
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "author": "Cristian Mamani Aguirre",
+        "url": "https://fullstackopen.com/",
+        "likes": 0,
+        "user": "69c3278153f22852f28b7859",
+        "id": "69c333547e41aff1b0dc1a31"
+      },
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "author": "Cristian Mamani Aguirre",
+        "url": "https://fullstackopen.com/",
+        "likes": 0,
+        "user": "69c3278153f22852f28b7859",
+        "id": "69c333647e41aff1b0dc1a35"
+      },
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "author": "Cristian Mamani Aguirre",
+        "url": "https://fullstackopen.com/",
+        "likes": 0,
+        "user": "69c3278153f22852f28b7859",
+        "id": "69c333687e41aff1b0dc1a39"
+      },
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "author": "Cristian Mamani Aguirre",
+        "url": "https://fullstackopen.com/",
+        "likes": 0,
+        "user": "69c3278153f22852f28b7859",
+        "id": "69c333d17e41aff1b0dc1a3d"
+      }
+    ],
+    "id": "69c3278153f22852f28b7859"
+  }
+]
+```
+
+We can use the populate method for choosing the fields we want to include from the documents. In addition to the field id we are now only interested in title.
+
+The selection of fields is done with the Mongo syntax:
+
+```js
+usersRouter.get("/", async (request, response) => {
+  const users = await User.find({}).populate("blogs", { title: 1 });
+
+  response.json(users);
+});
+```
+
+The result is now exactly like we want it to be:
+
+```json
+[
+  {
+    "username": "root",
+    "name": "Superuser",
+    "blogs": [
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "id": "69c333547e41aff1b0dc1a31"
+      },
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "id": "69c333647e41aff1b0dc1a35"
+      },
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "id": "69c333687e41aff1b0dc1a39"
+      },
+      {
+        "title": "User id of the blog creator is at the start sent along the request",
+        "id": "69c333d17e41aff1b0dc1a3d"
+      }
+    ],
+    "id": "69c3278153f22852f28b7859"
+  }
+]
+```
+
+Let's also add a suitable population of user information to blogs in the controllers/blogs.js file:
+
+```js
+blogsRouter.get("/", async (request, response) => {
+  const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 });
+
+  response.json(blogs);
+});
+```
+
+Now the user's information is added to the user field of note objects.
+
+```json
+[
+  {
+    "title": "First class tests",
+    "author": "Robert C. Martin",
+    "url": "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
+    "likes": 10,
+    "id": "69c1c95d2be88c91698d0c50"
+  },
+  {
+    "title": "React patterns",
+    "author": "Michael Chan",
+    "url": "https://reactpatterns.com/",
+    "likes": 7,
+    "id": "69c1c95d2be88c91698d0c51"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": {
+      "username": "root",
+      "name": "Superuser",
+      "id": "69c3278153f22852f28b7859"
+    },
+    "id": "69c333547e41aff1b0dc1a31"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": {
+      "username": "root",
+      "name": "Superuser",
+      "id": "69c3278153f22852f28b7859"
+    },
+    "id": "69c333647e41aff1b0dc1a35"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": {
+      "username": "root",
+      "name": "Superuser",
+      "id": "69c3278153f22852f28b7859"
+    },
+    "id": "69c333687e41aff1b0dc1a39"
+  },
+  {
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": 0,
+    "user": {
+      "username": "root",
+      "name": "Superuser",
+      "id": "69c3278153f22852f28b7859"
+    },
+    "id": "69c333d17e41aff1b0dc1a3d"
+  }
+]
+```
+
+It's important to understand that the database does not know that the ids stored in the user field of the blogs collection reference documents in the user collection.
+
+The functionality of the populate method of Mongoose is based on the fact that we have defined "types" to the references in the Mongoose schema with the ref option:
+
+```js
+const blogSchema = mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  author: {
+    type: String,
+    required: true,
+  },
+  url: {
+    type: String,
+    required: true,
+  },
+  likes: {
+    type: Number,
+    default: 0,
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User", // <--- This ref option
+  },
+});
+```

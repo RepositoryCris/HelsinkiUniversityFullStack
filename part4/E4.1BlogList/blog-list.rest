@@ -17,3 +17,41 @@ Content-Type: application/json
 }
 ### Expected: 201 Created
 ### Body: The saved blog object including _id and __v
+
+
+
+### -----------------------USERS
+### GET all users
+GET {{baseurl}}/api/users
+# Expected: 200 OK
+# Body: An array of users objects (empty [] if first time)
+
+
+### [SUCCESS] Post a valid new user
+POST {{baseurl}}/api/users/
+Content-Type: application/json
+
+{
+    "username": "root",
+    "name": "Superuser",
+    "password": "salainen"
+}
+### Expected: 201 Created
+### Body: The saved blog object including _id and __v
+
+
+
+### -----------------------BLOGS
+
+### [SUCCESS] Post a valid new blog
+POST {{baseurl}}/api/blogs/
+Content-Type: application/json
+
+{
+    "title": "User id of the blog creator is at the start sent along the request",
+    "author": "Cristian Mamani Aguirre",
+    "url": "https://fullstackopen.com/",
+    "likes": "0",
+    "userId": "69c3278153f22852f28b7859"
+}
+### Expected: 201 Created

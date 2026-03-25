@@ -17,6 +17,10 @@ const blogSchema = mongoose.Schema({
     type: Number,
     default: 0, // <--- This ensures if 'likes' is missing, it becomes 0
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
 });
 
 blogSchema.set("toJSON", {
