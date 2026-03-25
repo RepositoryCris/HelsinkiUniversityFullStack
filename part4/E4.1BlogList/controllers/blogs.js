@@ -56,6 +56,28 @@ blogsRouter.post("/", async (request, response) => {
 });
 
 blogsRouter.delete("/:id", async (request, response) => {
+  // 1. Extract and verify token
+  const decodedToken = jwt.verify(request.token, process.env.SECRET);
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: "token invalid" });
+  }
+
+  // 2. Find the blog to check ownership
+  const blog = await Blog.findById(request.params.id);
+
+  if (!blog) {
+    // If the blog doesn't exist, we can return 204 or 404
+    return response.status(404).json({ error: "blog not found" });
+  }
+
+  // 3. Compare IDs (Using the .toString() method mentioned in the task)
+  if (blog.user.toString() !== decodedToken.id.toString()) {
+    return response.status(401).json({
+      error: "only the creator can delete this blog",
+    });
+  }
+
+  // 4. If everything is correct, proceed with deletion
   await Blog.findByIdAndDelete(request.params.id);
   // REST convention: 204 No Content for successful deletion
   response.status(204).end();

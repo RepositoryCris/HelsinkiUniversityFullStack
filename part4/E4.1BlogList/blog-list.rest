@@ -1,11 +1,28 @@
 @baseurl = http://localhost:3003
 
-### GET all blogs
-GET {{baseurl}}/api/blogs
-# Expected: 200 OK
-# Body: An array of blog objects (empty [] if first time)
+### ============================================
+### BLOGLIST API - COMPREHENSIVE TEST SUITE
+### ============================================
 
-### [SUCCESS] Post a valid new blog
+### ---------- BLOGS - READ ----------
+
+### [GET] Retrieve all blogs
+# Expected: 200 OK
+# Success: Returns array of blog objects with populated user information
+GET {{baseurl}}/api/blogs
+
+### [GET] Retrieve single blog by ID
+# Expected: 200 OK
+# Success: Returns blog object with populated user
+# Expected: 404 Not Found if blog does not exist
+# Expected: 400 Bad Request if ID format is invalid
+GET {{baseurl}}/api/blogs/69c333d17e41aff1b0dc1a3d
+
+### ---------- BLOGS - CREATE ----------
+
+### [POST] Create blog - missing authentication (should fail)
+# Expected: 401 Unauthorized
+# Failure: Token validation required
 POST {{baseurl}}/api/blogs
 Content-Type: application/json
 
@@ -15,20 +32,90 @@ Content-Type: application/json
   "url": "https://fullstackopen.com/",
   "likes": 5
 }
-### Expected: 201 Created
-### Body: The saved blog object including _id and __v
 
+### [POST] Create blog - with valid authentication
+# Expected: 201 Created
+# Success: Blog saved with authenticated user as creator
+POST {{baseurl}}/api/blogs
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ4Mjh9.iPqUgsDWElEWvkIIw4s6IfDeRf-BScXn-WU6196ZvVE
 
+{
+    "title": "Canonical string reduction",
+    "author": "Edsger Dijkstra",
+    "url": "http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
+    "likes": 12
+}
 
-### -----------------------USERS
-### GET all users
-GET {{baseurl}}/api/users
+### [POST] Create blog - with missing required fields
+# Expected: 400 Bad Request
+# Failure: Validation error for missing title or URL
+POST {{baseurl}}/api/blogs
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ4Mjh9.iPqUgsDWElEWvkIIw4s6IfDeRf-BScXn-WU6196ZvVE
+Content-Type: application/json
+
+{
+    "author": "Missing Required Fields",
+    "likes": 5
+}
+
+### ---------- BLOGS - UPDATE ----------
+
+### [PUT] Update blog by ID
 # Expected: 200 OK
-# Body: An array of users objects (empty [] if first time)
+# Success: Updated blog object returned
+# Expected: 404 Not Found if blog does not exist
+# Expected: 400 Bad Request if ID format is invalid
+PUT {{baseurl}}/api/blogs/69c333d17e41aff1b0dc1a3d
+Content-Type: application/json
 
+{
+    "likes": 15
+}
 
-### [SUCCESS] Post a valid new user
-POST {{baseurl}}/api/users/
+### [PUT] Update blog with invalid data
+# Expected: 400 Bad Request
+# Failure: Validation error
+PUT {{baseurl}}/api/blogs/69c333d17e41aff1b0dc1a3d
+Content-Type: application/json
+
+{
+    "title": "",
+    "likes": "not a number"
+}
+
+### ---------- BLOGS - DELETE ----------
+
+### [DELETE] Remove blog - with valid authentication and ownership
+# Expected: 204 No Content
+# Success: Blog permanently removed from database
+DELETE {{baseurl}}/api/blogs/69c333d17e41aff1b0dc1a3d
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ4Mjh9.iPqUgsDWElEWvkIIw4s6IfDeRf-BScXn-WU6196ZvVE
+
+### [DELETE] Remove blog - missing authentication (should fail)
+# Expected: 401 Unauthorized
+# Failure: Token required for deletion
+DELETE {{baseurl}}/api/blogs/69c333d17e41aff1b0dc1a3d
+
+### ---------- USERS - READ ----------
+
+### [GET] Retrieve all users
+# Expected: 200 OK
+# Success: Returns array of user objects with populated blog list
+GET {{baseurl}}/api/users
+
+### [GET] Retrieve single user by ID
+# Expected: 200 OK
+# Success: Returns user object with populated blogs
+# Expected: 404 Not Found if user does not exist
+GET {{baseurl}}/api/users/69c3278153f22852f28b7859
+
+### ---------- USERS - CREATE ----------
+
+### [POST] Register new user - valid credentials
+# Expected: 201 Created
+# Success: User account created with hashed password
+POST {{baseurl}}/api/users
 Content-Type: application/json
 
 {
@@ -36,41 +123,83 @@ Content-Type: application/json
     "name": "Superuser",
     "password": "salainen"
 }
-### Expected: 201 Created
-### Body: The saved blog object including _id and __v
 
-
-
-### -----------------------BLOGS
-
-### [SUCCESS] Post a valid new blog
-POST {{baseurl}}/api/blogs/
-Content-Type: application/json
-
-{
-    "title": "User id of the blog creator is at the start sent along the request",
-    "author": "Cristian Mamani Aguirre",
-    "url": "https://fullstackopen.com/",
-    "likes": "0",
-    "userId": "69c3278153f22852f28b7859"
-}
-### Expected: 201 Created
-
-###-----------------LOGIN
-
-### create user
-POST {{baseurl}}/api/users/
+### [POST] Register new user - another valid user
+# Expected: 201 Created
+POST {{baseurl}}/api/users
 Content-Type: application/json
 
 {
     "username": "mluukkai",
-    "name": "helsinki user",
+    "name": "Helsinki User",
     "password": "salainen"
 }
 
+### [POST] Register new user - username too short (should fail)
+# Expected: 400 Bad Request
+# Failure: Username must be at least 3 characters
+POST {{baseurl}}/api/users
+Content-Type: application/json
 
-### try to Login
-POST {{baseurl}}/api/login/
+{
+    "username": "te",
+    "name": "Too Short",
+    "password": "valid123"
+}
+
+### [POST] Register new user - password too short (should fail)
+# Expected: 400 Bad Request
+# Failure: Password must be at least 3 characters
+POST {{baseurl}}/api/users
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "name": "Test User",
+    "password": "12"
+}
+
+### [POST] Register new user - duplicate username (should fail)
+# Expected: 400 Bad Request
+# Failure: Username must be unique
+POST {{baseurl}}/api/users
+Content-Type: application/json
+
+{
+    "username": "root",
+    "name": "Duplicate",
+    "password": "sekret123"
+}
+
+### [POST] Register new user - missing username (should fail)
+# Expected: 400 Bad Request
+# Failure: Username is required
+POST {{baseurl}}/api/users
+Content-Type: application/json
+
+{
+    "name": "No Username",
+    "password": "valid123"
+}
+
+### [POST] Register new user - missing password (should fail)
+# Expected: 400 Bad Request
+# Failure: Password is required
+POST {{baseurl}}/api/users
+Content-Type: application/json
+
+{
+    "username": "nopassword",
+    "name": "No Password"
+}
+
+### ---------- AUTHENTICATION - LOGIN ----------
+
+### [POST] Authenticate user - valid credentials
+# @name login
+# Expected: 200 OK
+# Success: Returns JWT token, username, and name
+POST {{baseurl}}/api/login
 Content-Type: application/json
 
 {
@@ -78,18 +207,231 @@ Content-Type: application/json
     "password": "salainen"
 }
 
+### Store authentication token for subsequent requests
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ4Mjh9.iPqUgsDWElEWvkIIw4s6IfDeRf-BScXn-WU6196ZvVE
 
+### [POST] Authenticate user - invalid password (should fail)
+# Expected: 401 Unauthorized
+# Failure: Invalid username or password
+POST {{baseurl}}/api/login
+Content-Type: application/json
 
+{
+    "username": "mluukkai",
+    "password": "wrongpassword"
+}
 
-### ------try with a valid token
+### [POST] Authenticate user - non-existent user (should fail)
+# Expected: 401 Unauthorized
+# Failure: Invalid username or password
+POST {{baseurl}}/api/login
+Content-Type: application/json
+
+{
+    "username": "nonexistent",
+    "password": "whatever"
+}
+
+### ---------- END-TO-END WORKFLOW ----------
+
+### 1. Register new user account
+# Expected: 201 Created
+POST {{baseurl}}/api/users
+Content-Type: application/json
+
+{
+    "username": "alice",
+    "name": "Alice Wonderland",
+    "password": "alice123"
+}
+
+### 2. Authenticate new user
+# @name loginAlice
+# Expected: 200 OK
+POST {{baseurl}}/api/login
+Content-Type: application/json
+
+{
+    "username": "alice",
+    "password": "alice123"
+}
+
+@aliceToken = {{loginAlice.response.body.token}}
+
+### 3. Create blog as authenticated user
+# @name aliceBlog
+# Expected: 201 Created
+# Success: Blog creator automatically assigned to Alice
 POST {{baseurl}}/api/blogs
+Authorization: Bearer {{aliceToken}}
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ4Mjh9.iPqUgsDWElEWvkIIw4s6IfDeRf-BScXn-WU6196ZvVE
 
 {
-    "title": "Canonical string reduction 2",
-    "author": "Edsger 2",
-    "url": "http://2www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
-    "likes": 2
-  }
+    "title": "Alice's Blog",
+    "author": "Alice",
+    "url": "http://alice.com",
+    "likes": 42
+}
 
+@aliceBlogId = {{aliceBlog.response.body.id}}
+
+### 4. Verify blog includes creator information
+# Expected: 200 OK
+# Success: Blog object contains populated user field with Alice's data
+GET {{baseurl}}/api/blogs
+
+### 5. Update own blog
+# Expected: 200 OK
+PUT {{baseurl}}/api/blogs/{{aliceBlogId}}
+Authorization: Bearer {{aliceToken}}
+Content-Type: application/json
+
+{
+    "likes": 100
+}
+
+### 6. Retrieve updated blog to confirm changes
+# Expected: 200 OK
+GET {{baseurl}}/api/blogs/{{aliceBlogId}}
+
+### 7. Delete own blog
+# Expected: 204 No Content
+DELETE {{baseurl}}/api/blogs/{{aliceBlogId}}
+Authorization: Bearer {{aliceToken}}
+
+### 8. Confirm blog removal
+# Expected: 200 OK
+# Success: Blog should no longer appear in collection
+GET {{baseurl}}/api/blogs
+
+### ---------- AUTHORIZATION & ACCESS CONTROL ----------
+
+### 1. Register second user
+# Expected: 201 Created
+POST {{baseurl}}/api/users
+Content-Type: application/json
+
+{
+    "username": "bob",
+    "name": "Bob Builder",
+    "password": "bob123"
+}
+
+### 2. Authenticate as second user
+# @name loginBob
+# Expected: 200 OK
+POST {{baseurl}}/api/login
+Content-Type: application/json
+
+{
+    "username": "bob",
+    "password": "bob123"
+}
+
+@bobToken = {{loginBob.response.body.token}}
+
+### 3. Create blog as second user
+# @name bobBlog
+# Expected: 201 Created
+POST {{baseurl}}/api/blogs
+Authorization: Bearer {{bobToken}}
+Content-Type: application/json
+
+{
+    "title": "Bob's Blog",
+    "author": "Bob",
+    "url": "http://bob.com",
+    "likes": 10
+}
+
+@bobBlogId = {{bobBlog.response.body.token}}
+
+### 4. Attempt unauthorized deletion - different user (should fail)
+# Expected: 401 Unauthorized
+# Failure: Only the creator can delete this blog
+DELETE {{baseurl}}/api/blogs/{{bobBlogId}}
+Authorization: Bearer {{aliceToken}}
+
+### 5. Authorized deletion - owner removes own blog (should succeed)
+# Expected: 204 No Content
+DELETE {{baseurl}}/api/blogs/{{bobBlogId}}
+Authorization: Bearer {{bobToken}}
+
+### ---------- ERROR HANDLING & EDGE CASES ----------
+
+### [GET] Blog with malformatted ID
+# Expected: 400 Bad Request
+# Error: "malformatted id"
+GET {{baseurl}}/api/blogs/invalid-id-format
+
+### [GET] Non-existent blog
+# Expected: 404 Not Found
+GET {{baseurl}}/api/blogs/507f1f77bcf86cd799439011
+
+### [POST] Blog with invalid JWT token
+# Expected: 401 Unauthorized
+# Error: "token invalid"
+POST {{baseurl}}/api/blogs
+Authorization: Bearer invalid.token.here
+Content-Type: application/json
+
+{
+    "title": "Invalid Token",
+    "author": "Hacker",
+    "url": "http://hack.com",
+    "likes": 0
+}
+
+### [POST] Blog with expired token
+# Expected: 401 Unauthorized
+# Error: "token expired"
+POST {{baseurl}}/api/blogs
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ4Mjh9.iPqUgsDWElEWvkIIw4s6IfDeRf-BScXn-WU6196ZvVE
+Content-Type: application/json
+
+{
+    "title": "Expired Token Test",
+    "author": "Tester",
+    "url": "http://test.com",
+    "likes": 0
+}
+
+### [DELETE] Blog without authentication header
+# Expected: 401 Unauthorized
+DELETE {{baseurl}}/api/blogs/69c333d17e41aff1b0dc1a3d
+
+### [POST] Blog with missing title (validation)
+# Expected: 400 Bad Request
+POST {{baseurl}}/api/blogs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "author": "Missing Title",
+    "url": "http://test.com",
+    "likes": 5
+}
+
+### [POST] Blog with missing URL (validation)
+# Expected: 400 Bad Request
+POST {{baseurl}}/api/blogs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "Missing URL",
+    "author": "Tester",
+    "likes": 5
+}
+
+### ---------- DATA INTEGRITY VERIFICATION ----------
+
+### [GET] Verify user data includes associated blogs
+# Expected: 200 OK
+# Success: Each user object contains blogs array with their created blogs
+GET {{baseurl}}/api/users
+
+### [GET] Verify blog data includes creator information
+# Expected: 200 OK
+# Success: Each blog object contains populated user field with username and name
+GET {{baseurl}}/api/blogs
