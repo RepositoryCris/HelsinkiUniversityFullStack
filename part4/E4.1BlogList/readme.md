@@ -2598,3 +2598,45 @@ Store tokens in a database to enable instant revocation. Trade-off: increased co
 ### Implementation
 
 Tokens are typically random strings (no user data embedded), with user identity fetched per request. Cookies commonly replace the Authorization header for token transport.
+
+## 4.20 Blog List Expansion Step 8
+
+### Update utils/middleware.js
+
+Add the tokenExtractor function to your existing middleware file. This function mimics your old getTokenFrom helper but assigns the result to request.token.
+
+```JavaScript
+const tokenExtractor = (request, response, next) => {
+const authorization = request.get('authorization')
+
+if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+request.token = authorization.substring(7)
+} else {
+request.token = null
+}
+
+next()
+}
+
+// Remember to add it to the exports at the bottom of the file:
+module.exports = {
+requestLogger,
+unknownEndpoint,
+errorHandler,
+tokenExtractor, // Add this line
+}
+```
+
+### Register the Middleware in app.js
+
+To make request.token available in your routers, you must register the middleware before the routes are defined in your main application file.
+
+```JavaScript
+const middleware = require('./utils/middleware')
+// ... other imports
+
+app.use(middleware.tokenExtractor) // Must come before routes
+
+app.use('/api/login', loginRouter)
+app.use('/api/blogs', blogsRouter)
+```
