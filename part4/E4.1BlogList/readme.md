@@ -2221,3 +2221,380 @@ Verification Checklist
 - Use your `.http` file to `GET /api/blogs`. You should see a `user` object (not just an ID) inside each blog.
 
 - Use your `.http` file to `GET /api/users`. You should see an array of objects inside the `blogs` field.
+
+## 4.18 Blog List Expansion, step 6
+
+Let's first implement the functionality for logging in. Install the jsonwebtoken library, which allows us to generate JSON web tokens.
+
+```bash
+npm install jsonwebtoken
+```
+
+The code for login functionality goes to the file `controllers/login.js`.
+
+```js
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const loginRouter = require("express").Router();
+const User = require("../models/user");
+
+loginRouter.post("/", async (request, response) => {
+  const { username, password } = request.body;
+
+  const user = await User.findOne({ username });
+  const passwordCorrect =
+    user === null ? false : await bcrypt.compare(password, user.passwordHash);
+
+  if (!(user && passwordCorrect)) {
+    return response.status(401).json({
+      error: "invalid username or password",
+    });
+  }
+
+  const userForToken = {
+    username: user.username,
+    id: user._id,
+  };
+
+  const token = jwt.sign(userForToken, process.env.SECRET);
+
+  response
+    .status(200)
+    .send({ token, username: user.username, name: user.name });
+});
+
+module.exports = loginRouter;
+```
+
+If the password is correct, a token is created with the method jwt.sign. The token contains the username and the user id in a digitally signed form.
+
+```js
+const userForToken = {
+  username: user.username,
+  id: user._id,
+};
+
+const token = jwt.sign(userForToken, process.env.SECRET);
+```
+
+The token has been digitally signed using a string from the environment variable _SECRET_ as the _secret_. The digital signature ensures that only parties who know the secret can generate a valid token. The value for the environment variable must be set in the `.env` file.
+
+Now the code for login just has to be added to the application by adding the new router to `app.js`.
+
+```js
+const loginRouter = require("./controllers/login");
+
+//...
+
+app.use("/api/login", loginRouter);
+```
+
+Let's try logging in using VS Code REST-client:
+
+```bash
+POST {{baseurl}}/api/login/
+Content-Type: application/json
+
+{
+    "username": "mluukkai",
+    "password": "salainen"
+}
+```
+
+It does not work. The following is printed to the console:
+
+```bash
+Error: secretOrPrivateKey must have a value
+    at Object.module.exports [as sign]
+```
+
+The command jwt.sign (userForToken, process.env.SECRET) fails. We forgot to set a value to the environment variable SECRET. It can be any string. When we set the value in file .env (and restart the server), the login works.
+
+```bash
+SECRET=putAnyStringHere
+```
+
+**Security:** Never hardcode your SECRET. Since you've already added it to .env, you're on the right track.
+
+Restart the server, then try again to login.
+
+A successful login returns the user details and the token:
+
+```bash
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 234
+ETag: W/"ea-TrX4p5NIzyJmAPZSrH5UIlEoXm0"
+Date: Wed, 25 Mar 2026 16:04:57 GMT
+Connection: close
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ2OTd9.Rz9uJxKbbYxrwX3ItgKsLu_QbeWHbGLNn0F6oKe3Ils",
+  "username": "mluukkai",
+  "name": "helsinki user"
+}
+```
+
+A wrong username or password returns an error message and the proper status code:
+
+```bash
+HTTP/1.1 401 Unauthorized
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 40
+ETag: W/"28-o0F+kGSS37KN6k7gEZFvLtWpuSE"
+Date: Wed, 25 Mar 2026 16:06:58 GMT
+Connection: close
+
+{
+  "error": "invalid username or password"
+}
+```
+
+## Security
+
+Never hardcode your SECRET. Since you've already added it to .env, you're on the right track.
+
+## Limiting creating new notes to logged-in users
+
+- Goal: Restrict note creation to logged-in users by requiring a valid token in the request.
+
+Implementation:
+
+- The token is sent from the browser to the server using the Authorization header.
+
+- The header includes the authentication scheme (Bearer) followed by the token.
+
+Example:
+
+```bash
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5c2VybmFtZSI6Im1sdXVra2FpIiwiaW
+```
+
+- The server uses this token to identify the user and save the new note to that user’s notes list.
+
+Creating new blogs will change like so (controllers/blogs.js):
+
+```js
+//...
+const jwt = require("jsonwebtoken");
+
+const getTokenFrom = (request) => {
+  const authorization = request.get("authorization");
+  if (authorization && authorization.startsWith("Bearer ")) {
+    return authorization.replace("Bearer ", "");
+  }
+  return null;
+};
+
+//...
+
+blogsRouter.post("/", async (request, response) => {
+  const body = request.body;
+
+  const decodedToken = jwt.verify(getTokenFrom(request), process.env.SECRET);
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: "token invalid" });
+  }
+  const user = await User.findById(decodedToken.id);
+
+  // 4.17 logic: Find any user from the database (the first one)
+  //const users = await User.find({});
+  //const user = users[0];
+
+  if (!user) {
+    return response.status(400).json({ error: "no users found in database" });
+  }
+  //...
+```
+
+The helper function getTokenFrom isolates the token from the authorization header. The validity of the token is checked with `jwt.verify`. The method also decodes the token, or returns the Object which the token was based on.
+
+```bash
+const decodedToken = jwt.verify(token, process.env.SECRET)
+```
+
+If the token is missing or it is invalid, the exception JsonWebTokenError is raised. We need to extend the error handling middleware to take care of this particular case:
+
+```js
+const errorHandler = (error, request, response, next) => {
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
+  } else if (
+    error.name === "MongoServerError" &&
+    error.message.includes("E11000 duplicate key error")
+  ) {
+    return response
+      .status(400)
+      .json({ error: "expected `username` to be unique" });
+  } else if (error.name === "JsonWebTokenError") {
+    //
+    return response.status(401).json({ error: "token invalid" }); //
+  }
+
+  next(error);
+};
+```
+
+The object decoded from the token contains the _username_ and _id_ fields, which tell the server who made the request.
+
+If the object decoded from the token does not contain the user's identity (`decodedToken.id` is undefined), error status code 401 unauthorized is returned and the reason for the failure is explained in the response body.
+
+```js
+if (!decodedToken.id) {
+  return response.status(401).json({
+    error: "token invalid",
+  });
+}
+```
+
+When the identity of the maker of the request is resolved, the execution continues as before.
+
+A new blog can now be created using Postman or vs Rest Client.
+
+If the authorization header is given the correct value, the string `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ`, where the second value is the **token returned by the login operation.**
+
+```bash
+POST {{baseurl}}/api/blogs
+Content-Type: application/json
+Authorization: Bearer tokenGeneratedForTheUser
+
+{
+    "title": "Canonical string reduction 2",
+    "author": "Edsger 2",
+    "url": "http://2www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
+    "likes": 2
+  }
+```
+
+Successfully added
+
+```bash
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 1236
+ETag: W/"4d4-VphHwd/OdvMjQBPTwJydNXD7j7k"
+Date: Wed, 25 Mar 2026 20:04:05 GMT
+Connection: close
+```
+
+```json
+[
+  //...
+  {
+    "username": "mluukkai",
+    "name": "helsinki user",
+    "blogs": [
+      {
+        "title": "Canonical string reduction",
+        "author": "Edsger W. Dijkstra",
+        "url": "http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
+        "id": "69c43f1bbc8175ab09ca89f3"
+      },
+      {
+        "title": "Canonical string reduction 2",
+        "author": "Edsger 2",
+        "url": "http://2www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
+        "id": "69c43fa8bc8175ab09ca89f9"
+      }
+    ],
+    "id": "69c40687da6169f736bee2fa"
+  }
+]
+```
+
+## Problems of Token-based authentication
+
+Problems of Token-based authentication
+Token authentication is pretty easy to implement, but it contains one problem. Once the API user, eg. a React app gets a token, the API has a blind trust to the token holder. What if the access rights of the token holder should be revoked?
+
+There are two solutions to the problem. The easier one is to limit the validity period of a token:
+
+```js
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const loginRouter = require("express").Router();
+const User = require("../models/user");
+
+loginRouter.post("/", async (request, response) => {
+  const { username, password } = request.body;
+
+  const user = await User.findOne({ username });
+  const passwordCorrect =
+    user === null ? false : await bcrypt.compare(password, user.passwordHash);
+
+  if (!(user && passwordCorrect)) {
+    return response.status(401).json({
+      error: "invalid username or password",
+    });
+  }
+
+  const userForToken = {
+    username: user.username,
+    id: user._id,
+  };
+
+  // token expires in 60*60 seconds, that is, in one hour
+  const token = jwt.sign(userForToken, process.env.SECRET, {
+    expiresIn: 60 * 60,
+  });
+
+  response
+    .status(200)
+    .send({ token, username: user.username, name: user.name });
+});
+
+module.exports = loginRouter;
+```
+
+Once the token expires, the client app needs to get a new token. Usually, this happens by forcing the user to re-login to the app.
+
+The error handling middleware should be extended to give a proper error in the case of an expired token:
+
+```js
+const errorHandler = (error, request, response, next) => {
+  logger.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
+  } else if (
+    error.name === "MongoServerError" &&
+    error.message.includes("E11000 duplicate key error")
+  ) {
+    return response.status(400).json({
+      error: "expected `username` to be unique",
+    });
+  } else if (error.name === "JsonWebTokenError") {
+    return response.status(401).json({
+      error: "invalid token",
+    });
+  } else if (error.name === "TokenExpiredError") {
+    //
+    return response.status(401).json({
+      //
+      error: "token expired", //
+    }); //
+  } //
+
+  next(error);
+};
+```
+
+### Token Expiration
+
+- Shorter = more secure but worse UX.
+- Longer = less secure but better UX.
+
+### Server-Side Sessions
+
+Store tokens in a database to enable instant revocation. Trade-off: increased complexity and slower performance (database lookups). Often mitigated using fast key-value stores like Redis.
+
+### Implementation
+
+Tokens are typically random strings (no user data embedded), with user identity fetched per request. Cookies commonly replace the Authorization header for token transport.
