@@ -26,11 +26,12 @@ blogsRouter.get("/:id", async (request, response) => {
 
 blogsRouter.post("/", async (request, response) => {
   const user = request.user; // Already found by middleware!
-  const body = request.body;
 
   if (!user) {
-    return response.status(400).json({ error: "no users found in database" });
+    return response.status(401).json({ error: "token missing or invalid" });
   }
+
+  const body = request.body;
 
   const blog = new Blog({
     title: body.title,

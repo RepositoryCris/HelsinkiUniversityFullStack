@@ -2640,3 +2640,9 @@ app.use(middleware.tokenExtractor) // Must come before routes
 app.use('/api/login', loginRouter)
 app.use('/api/blogs', blogsRouter)
 ```
+
+Test all with `npm test` or
+
+```bash
+npm test -- tests/blogs_api.test.js
+```
