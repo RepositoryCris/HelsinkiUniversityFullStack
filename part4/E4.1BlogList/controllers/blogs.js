@@ -41,10 +41,6 @@ blogsRouter.post("/", async (request, response) => {
   }
   const user = await User.findById(decodedToken.id);
 
-  // 4.17 logic: Find any user from the database (the first one)
-  //const users = await User.find({});
-  //const user = users[0];
-
   if (!user) {
     return response.status(400).json({ error: "no users found in database" });
   }
