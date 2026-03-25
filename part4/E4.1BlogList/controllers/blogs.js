@@ -4,7 +4,7 @@ const Blog = require("../models/blog");
 const User = require("../models/user");
 
 blogsRouter.get("/", async (request, response) => {
-  const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 });
+  const blogs = await Blog.find({}).populate("user", { username: 1, name: 1 }); // Creator info displayed with blog
 
   response.json(blogs);
 });
@@ -25,10 +25,12 @@ blogsRouter.get("/:id", async (request, response) => {
 blogsRouter.post("/", async (request, response) => {
   const body = request.body;
 
-  const user = await User.findById(body.userId);
+  // 4.17 logic: Find any user from the database (the first one)
+  const users = await User.find({});
+  const user = users[0];
 
   if (!user) {
-    return response.status(400).json({ error: "userId missing or not valid" });
+    return response.status(400).json({ error: "no users found in database" });
   }
 
   const blog = new Blog({
@@ -36,11 +38,13 @@ blogsRouter.post("/", async (request, response) => {
     author: body.author,
     url: body.url,
     likes: body.likes,
-    user: user.id,
+    user: user.id, // Assign the ID of the found user
   });
 
   const savedBlog = await blog.save();
-  user.blogs = user.blogs.concat(savedBlog.id);
+
+  // Link the blog back to the user's array
+  user.blogs = user.blogs.concat(savedBlog._id);
   await user.save();
 
   response.status(201).json(savedBlog);

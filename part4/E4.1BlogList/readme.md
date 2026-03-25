@@ -2145,3 +2145,79 @@ To avoid the database race conditions mentioned in the exercise, make sure your 
 ```bash
 "test": "node --test --test-concurrency=1"
 ```
+
+## 4.17 Blog List Expansion step 5
+
+To strictly complete **4.17**, we need to ensure that when a blog is created **without** a userId in the request body, the backend automatically assigns it to an existing user (as the exercise says: "any user... for example the one found first").
+
+### Update the Blog POST Controller
+
+Modify your `blogsRouter.post` in `controllers/blogs.js`. Instead of strictly requiring `body.userId` from the request, we will fetch the first user from the database if one isn't provided.
+
+```JavaScript
+blogsRouter.post("/", async (request, response) => {
+const body = request.body;
+
+// 4.17 logic: Find any user from the database (the first one)
+const users = await User.find({});
+const user = users[0];
+
+if (!user) {
+return response.status(400).json({ error: "no users found in database" });
+}
+
+const blog = new Blog({
+title: body.title,
+author: body.author,
+url: body.url,
+likes: body.likes || 0,
+user: user.id, // Assign the ID of the found user
+});
+
+const savedBlog = await blog.save();
+
+// Link the blog back to the user's array
+user.blogs = user.blogs.concat(savedBlog.\_id);
+await user.save();
+
+response.status(201).json(savedBlog);
+});
+```
+
+### Ensure Populate is active in GET routes
+
+You already have this in your code, but make sure your `GET` routes are configured like this to satisfy the "display information" requirement of 4.17:
+
+In `controllers/blogs.js`:
+
+```JavaScript
+blogsRouter.get("/", async (request, response) => {
+const blogs = await Blog
+.find({})
+.populate("user", { username: 1, name: 1 }); // Creator info displayed with blog
+response.json(blogs);
+});
+```
+
+In `controllers/users.js`:
+
+```JavaScript
+usersRouter.get("/", async (request, response) => {
+const users = await User
+.find({})
+.populate("blogs", { title: 1, author: 1, url: 1 }); // Blogs displayed with each user
+response.json(users);
+});
+```
+
+### Fixing the failing tests
+
+Because your previous tests were getting a **400 Bad Request** (because `body.userId` was missing), the change in Step 1 above will fix them! By automatically finding a user in the controller, your tests for "adding a new blog" will now pass even if they don't send a `userId`.
+
+Verification Checklist
+
+- Run `npm test`. The "addition of a new blog" tests should now pass because the controller picks a default user.
+
+- Use your `.http` file to `GET /api/blogs`. You should see a `user` object (not just an ID) inside each blog.
+
+- Use your `.http` file to `GET /api/users`. You should see an array of objects inside the `blogs` field.
