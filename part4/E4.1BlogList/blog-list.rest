@@ -208,7 +208,7 @@ Content-Type: application/json
 }
 
 ### Store authentication token for subsequent requests
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NTQ4Mjh9.iPqUgsDWElEWvkIIw4s6IfDeRf-BScXn-WU6196ZvVE
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1sdXVra2FpIiwiaWQiOiI2OWM0MDY4N2RhNjE2OWY3MzZiZWUyZmEiLCJpYXQiOjE3NzQ0NzY3MDMsImV4cCI6MTc3NDQ4MDMwM30.480--lSul3R84IoY-u4hlGjvAil8j414gXG536K8yho
 
 ### [POST] Authenticate user - invalid password (should fail)
 # Expected: 401 Unauthorized
@@ -312,7 +312,7 @@ POST {{baseurl}}/api/users
 Content-Type: application/json
 
 {
-    "username": "bob",
+    "username": "bob1",
     "name": "Bob Builder",
     "password": "bob123"
 }
@@ -435,3 +435,5 @@ GET {{baseurl}}/api/users
 # Expected: 200 OK
 # Success: Each blog object contains populated user field with username and name
 GET {{baseurl}}/api/blogs
+
+

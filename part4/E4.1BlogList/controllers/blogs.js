@@ -25,14 +25,8 @@ blogsRouter.get("/:id", async (request, response) => {
 });
 
 blogsRouter.post("/", async (request, response) => {
+  const user = request.user; // Already found by middleware!
   const body = request.body;
-
-  const decodedToken = jwt.verify(request.token, process.env.SECRET);
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: "token invalid" });
-  }
-
-  const user = await User.findById(decodedToken.id);
 
   if (!user) {
     return response.status(400).json({ error: "no users found in database" });
@@ -56,13 +50,12 @@ blogsRouter.post("/", async (request, response) => {
 });
 
 blogsRouter.delete("/:id", async (request, response) => {
-  // 1. Extract and verify token
-  const decodedToken = jwt.verify(request.token, process.env.SECRET);
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: "token invalid" });
+  const user = request.user; // Already found by middleware!
+
+  if (!user) {
+    return response.status(401).json({ error: "token missing or invalid" });
   }
 
-  // 2. Find the blog to check ownership
   const blog = await Blog.findById(request.params.id);
 
   if (!blog) {
@@ -70,14 +63,14 @@ blogsRouter.delete("/:id", async (request, response) => {
     return response.status(404).json({ error: "blog not found" });
   }
 
-  // 3. Compare IDs (Using the .toString() method mentioned in the task)
-  if (blog.user.toString() !== decodedToken.id.toString()) {
+  // Compare IDs (Using the .toString() method mentioned in the task)
+  if (blog.user.toString() !== user.id.toString()) {
     return response.status(401).json({
       error: "only the creator can delete this blog",
     });
   }
 
-  // 4. If everything is correct, proceed with deletion
+  //If everything is correct, proceed with deletion
   await Blog.findByIdAndDelete(request.params.id);
   // REST convention: 204 No Content for successful deletion
   response.status(204).end();
