@@ -224,6 +224,44 @@ describe("when there is initially one user in db", () => {
   });
 });
 
+describe("invalid user creation", () => {
+  test("creation fails with 400 if password is too short", async () => {
+    const newUser = {
+      username: "shortpw",
+      name: "Short Password Test",
+      password: "12", // Less than 3 chars
+    };
+
+    const result = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/);
+
+    assert(
+      result.body.error.includes("password must be at least 3 characters long"),
+    );
+  });
+
+  test("creation fails with 400 if username is too short", async () => {
+    const newUser = {
+      username: "li", // Less than 3 chars
+      name: "Short Username Test",
+      password: "validpassword",
+    };
+
+    const result = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/);
+
+    assert(
+      result.body.error.includes("username must be at least 3 characters long"),
+    );
+  });
+});
+
 after(async () => {
   await mongoose.connection.close();
 });

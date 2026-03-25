@@ -841,10 +841,10 @@ module.exports = {
 The `.env` file has separate variables for the database addresses of the **development** and **test** _databases_:
 
 ```bash
-MONGODB_URI=mongodb+srv://fullstack:thepasswordishere@cluster0.a5qfl.mongodb.net/blogApp?retryWrites=true&w=majority&appName=Cluster0
+MONGODB_URI=mongodb+srv:...
 PORT=3001
 
-TEST_MONGODB_URI=mongodb+srv://fullstack:thepasswordishere@cluster0.a5qfl.mongodb.net/testBlogApp?retryWrites=true&w=majority&appName=Cluster0
+TEST_MONGODB_URI=mongodb+srv:...
 ```
 
 Just create a new data base for test called `testBlogList` with your own credentials and user
@@ -1277,6 +1277,8 @@ test("if the likes property is missing, it defaults to 0", async () => {
   assert.strictEqual(response.body.likes, 0);
 });
 ```
+
+## 4.15 Blog List Expansion, step 3
 
 ## Mongoose schema for users
 
@@ -1746,7 +1748,7 @@ user: ObjectId('69c3278153f22852f28b7859')
 __v: 0
 ```
 
-Now look in the web http://localhost:3003/api/blogs/
+Now look in the web `http://localhost:3003/api/blogs/`
 
 ```json
 [
@@ -2039,4 +2041,107 @@ const blogSchema = mongoose.Schema({
     ref: "User", // <--- This ref option
   },
 });
+```
+
+## 4.16 Blog List Expansion, step 4
+
+Add `minlength` and `required` to the username. You already have `unique: true`, which is perfect.
+
+```js
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    minlength: 3, // Validation for username length
+  },
+  name: String,
+  passwordHash: String,
+  blogs: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Blog",
+    },
+  ],
+});
+```
+
+### Update the Users Controller
+
+We must validate the password before calling `bcrypt.hash`. If validation fails, we return `400 Bad Request` and an error message.
+
+File: `controllers/users.js`
+
+```js
+usersRouter.post("/", async (request, response) => {
+  const { username, name, password } = request.body;
+
+// Password validation (Requirement 4.16)
+if (!password || password.length < 3) {
+  return response.status(400).json({
+    error: "password must be at least 3 characters long",
+  });
+}
+
+// Username validation for presence (backup for the controller)
+if (!username || username.length < 3) {
+  return response.status(400).json({
+    error: "username must be at least 3 characters long",
+  });
+}
+//...
+```
+
+### Add Integration Tests
+
+You need to verify that invalid users are rejected. Add these tests to your user test block.
+
+File: tests/blog_api.test.js (or your user test file)
+
+```js
+describe("invalid user creation", () => {
+  test("creation fails with 400 if password is too short", async () => {
+    const newUser = {
+      username: "shortpw",
+      name: "Short Password Test",
+      password: "12", // Less than 3 chars
+    };
+
+    const result = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/);
+
+    assert(
+      result.body.error.includes("password must be at least 3 characters long"),
+    );
+  });
+
+  test("creation fails with 400 if username is too short", async () => {
+    const newUser = {
+      username: "li", // Less than 3 chars
+      name: "Short Username Test",
+      password: "validpassword",
+    };
+
+    const result = await api
+      .post("/api/users")
+      .send(newUser)
+      .expect(400)
+      .expect("Content-Type", /application\/json/);
+
+    assert(
+      result.body.error.includes("username must be at least 3 characters long"),
+    );
+  });
+});
+```
+
+### Pro-tip for sequential tests
+
+To avoid the database race conditions mentioned in the exercise, make sure your package.json test script looks like this:
+
+```bash
+"test": "node --test --test-concurrency=1"
 ```
