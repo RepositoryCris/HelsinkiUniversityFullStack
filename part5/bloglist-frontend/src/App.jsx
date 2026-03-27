@@ -4,12 +4,11 @@ import blogService from "./services/blog";
 import loginService from "./services/login";
 import Login from "./components/Login";
 import Blogs from "./components/Blogs";
+import Notification from "./components/Notification";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
-  //const [newBlog, setNewBlog] = useState("");
-  //const [showAll, setShowAll] = useState(true);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [notification, setNotification] = useState(null);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -21,9 +20,11 @@ const App = () => {
       try {
         const blogsData = await blogService.getBlogs();
         setBlogs(blogsData);
-        setErrorMessage(null);
-      } catch (err) {
-        setErrorMessage(err.message);
+      } catch (error) {
+        setNotification({
+          message: error.message,
+          type: "error",
+        });
       } finally {
         //
       }
@@ -45,6 +46,18 @@ const App = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (notification) {
+      const timeoutId = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+
+      // The Cleanup Function:
+      // This runs if notification changes OR the component unmounts
+      return () => clearTimeout(timeoutId);
+    }
+  }, [notification]);
+
   const handleUsernameChange = ({ target }) => {
     setUsername(target.value);
   };
@@ -65,10 +78,10 @@ const App = () => {
       setUsername("");
       setPassword("");
     } catch {
-      setErrorMessage("wrong credentials");
-      setTimeout(() => {
-        setErrorMessage(null);
-      }, 5000);
+      setNotification({
+        message: "Wrong username or password",
+        type: "error",
+      });
     } finally {
       ("");
     }
@@ -84,17 +97,24 @@ const App = () => {
       const returnedBlog = await blogService.create(blogObject);
       setBlogs(blogs.concat(returnedBlog));
 
+      setNotification({
+        message: `A new blog ${returnedBlog.title.toUpperCase()} by ${returnedBlog.author.toUpperCase()} added`,
+        type: "success",
+      });
+
       return returnedBlog;
     } catch (error) {
-      setErrorMessage("Failed to create blog", error);
-      setTimeout(() => setErrorMessage(null), 5000);
+      setNotification({
+        message: `Failed to create blog. Title, author, and url are required. ${error.message}`,
+        type: "error",
+      });
     }
   };
 
   if (user === null) {
     return (
       <div>
-        {/*<Notification message=*/ <div>{errorMessage}</div>}
+        <Notification notification={notification} />
         <Login
           handleLogin={handleLogin}
           username={username}
@@ -108,6 +128,7 @@ const App = () => {
 
   return (
     <div>
+      <Notification notification={notification} />
       <Blogs
         user={user}
         blogs={blogs}

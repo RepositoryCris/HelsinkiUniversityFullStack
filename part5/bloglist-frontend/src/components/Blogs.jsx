@@ -10,7 +10,7 @@ const Blogs = ({ blogs, user, handleLogout, createBlog }) => {
 
   return (
     <>
-      <h2>blogs</h2>
+      <h2>Blogs</h2>
       <p>{`${user.username.toUpperCase()} logged in`}</p>
       <button onClick={handleLogout}>logout</button>
 
