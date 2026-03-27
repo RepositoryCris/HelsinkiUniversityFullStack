@@ -79,6 +79,18 @@ const App = () => {
     setUser(null);
   };
 
+  const handleCreateBlog = async (blogObject) => {
+    try {
+      const returnedBlog = await blogService.create(blogObject);
+      setBlogs(blogs.concat(returnedBlog));
+
+      return returnedBlog;
+    } catch (error) {
+      setErrorMessage("Failed to create blog", error);
+      setTimeout(() => setErrorMessage(null), 5000);
+    }
+  };
+
   if (user === null) {
     return (
       <div>
@@ -96,7 +108,12 @@ const App = () => {
 
   return (
     <div>
-      <Blogs user={user} blogs={blogs} handleLogout={handleLogout} />
+      <Blogs
+        user={user}
+        blogs={blogs}
+        handleLogout={handleLogout}
+        createBlog={handleCreateBlog}
+      />
     </div>
   );
 };
