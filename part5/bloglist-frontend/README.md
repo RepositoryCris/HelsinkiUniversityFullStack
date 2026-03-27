@@ -41,3 +41,91 @@ export default defineConfig({
   },
 });
 ```
+
+## 5.2 Blog List Frontend Step 2
+
+### Local Storage for Login Persistence
+
+Problem: User logs out when browser refreshes.
+
+Solution: Save user data to local storage.
+
+Methods:
+
+- `localStorage.setItem('key', value)` - store string
+
+- `localStorage.getItem('key')` - retrieve
+
+- `localStorage.removeItem('key')` - delete
+
+Implementation:
+
+```javascript
+// Login - save user
+const userJSON = JSON.stringify(user);
+localStorage.setItem("loggedUser", userJSON);
+
+// App load - restore user
+const savedUser = JSON.parse(localStorage.getItem("loggedUser"));
+
+// Logout - clear
+localStorage.removeItem("loggedUser");
+```
+
+Storage only accepts strings, so use `JSON.stringify()` and `JSON.parse()`
+
+### Update handleLogin to Save the Session
+
+In your `handleLogin` function, once the server returns a successful user object, you need to stringify it and store it in `localStorage`.
+
+```js
+const handleLogin = async (event) => {
+  event.preventDefault();
+
+  try {
+    const user = await loginService.login({ username, password });
+
+    // --- ADDED FOR 5.2 ---
+    window.localStorage.setItem("loggedBlogappUser", JSON.stringify(user));
+    // ---------------------
+
+    blogService.setToken(user.token);
+    setUser(user);
+    setUsername("");
+    setPassword("");
+  } catch {
+    setErrorMessage("wrong credentials");
+    setTimeout(() => setErrorMessage(null), 5000);
+  }
+};
+```
+
+### Add a useEffect to Load the Session on Startup
+
+You need a "hook" that runs exactly once when the application starts up. It checks if that specific key exists in `localStorage`.
+
+```JavaScript
+useEffect(() => {
+const loggedUserJSON = window.localStorage.getItem('loggedBlogappUser');
+if (loggedUserJSON) {
+const user = JSON.parse(loggedUserJSON);
+setUser(user);
+blogService.setToken(user.token);
+}
+}, []);
+```
+
+**Note:** Make sure to call `blogService.setToken(user.token)` inside this effect, otherwise, your subsequent requests to create or delete blogs will fail because the service won't have the token!
+
+### Implement the Logout Functionality
+
+To "log out," you simply need to clear the state and remove the item from the browser's storage.
+
+In `App.jsx`:
+
+```JavaScript
+const handleLogout = () => {
+window.localStorage.removeItem('loggedBlogappUser');
+setUser(null);
+};
+```
