@@ -1,7 +1,8 @@
 import Blog from "./Blog";
 import CreateNew from "./CreateNew";
+import Togglable from "./Togglable";
 
-const Blogs = ({ blogs, user, handleLogout, createBlog }) => {
+const Blogs = ({ blogs, user, handleLogout, createBlog, blogFormRef }) => {
   /*const filterByUser = blogs.filter((blog) => {
     if (blog.user && blog.user.username === user.username) {
       return blog;
@@ -14,7 +15,9 @@ const Blogs = ({ blogs, user, handleLogout, createBlog }) => {
       <p>{`${user.username.toUpperCase()} logged in`}</p>
       <button onClick={handleLogout}>logout</button>
 
-      <CreateNew createBlog={createBlog} />
+      <Togglable buttonLabel="create new blog" ref={blogFormRef}>
+        <CreateNew createBlog={createBlog} />
+      </Togglable>
 
       {blogs.map((blog) => (
         <Blog key={blog.id} blog={blog} />

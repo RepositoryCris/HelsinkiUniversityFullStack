@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import blogService from "./services/blog";
 import loginService from "./services/login";
@@ -92,9 +92,15 @@ const App = () => {
     setUser(null);
   };
 
+  const blogFormRef = useRef(); // 1. Create the ref
+
   const handleCreateBlog = async (blogObject) => {
     try {
       const returnedBlog = await blogService.create(blogObject);
+
+      // 2. Hide the form using the ref
+      blogFormRef.current.toggleVisibility();
+
       setBlogs(blogs.concat(returnedBlog));
 
       setNotification({
@@ -134,6 +140,7 @@ const App = () => {
         blogs={blogs}
         handleLogout={handleLogout}
         createBlog={handleCreateBlog}
+        blogFormRef={blogFormRef} // 3. Pass the ref down
       />
     </div>
   );
