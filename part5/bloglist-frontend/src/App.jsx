@@ -118,7 +118,7 @@ const App = () => {
   };
 
   const handleLike = async (blog) => {
-    const updatedBlog = {
+    const blogToUpdate = {
       ...blog,
       likes: blog.likes + 1,
       // The backend usually expects the user ID as a string for PUT
@@ -126,9 +126,15 @@ const App = () => {
     };
 
     try {
-      const returnedBlog = await blogService.update(blog.id, updatedBlog);
-      // Update local state: replace the old blog with the one from the server
-      setBlogs(blogs.map((b) => (b.id !== blog.id ? b : returnedBlog)));
+      const returnedBlog = await blogService.update(blog.id, blogToUpdate);
+
+      // FIX: The backend returnedBlog might have 'user' as a string ID.
+      // We create a version for our state that keeps the original 'blog.user' object.
+      const updatedBlogForState = {
+        ...returnedBlog,
+        user: blog.user,
+      };
+      setBlogs(blogs.map((b) => (b.id !== blog.id ? b : updatedBlogForState)));
     } catch (error) {
       setNotification({
         message: `Error updating likes: ${error.message}`,
