@@ -35,7 +35,7 @@ const Login = ({
         <button type="submit">login</button>
       </form>
     </>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

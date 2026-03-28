@@ -1,29 +1,29 @@
-import { useState } from "react";
+import { useState } from 'react'
 
 const CreateNew = ({ createBlog }) => {
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [url, setUrl] = useState("");
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+  const [url, setUrl] = useState('')
 
   const addBlog = async (event) => {
-    event.preventDefault();
+    event.preventDefault()
 
     try {
       createBlog({
         title: title,
         author: author,
         url: url,
-      });
+      })
 
-      setTitle("");
-      setAuthor("");
-      setUrl("");
+      setTitle('')
+      setAuthor('')
+      setUrl('')
     } catch (error) {
-      console.error(error);
+      console.error(error)
     } finally {
       //
     }
-  };
+  }
 
   return (
     <>
@@ -65,6 +65,6 @@ const CreateNew = ({ createBlog }) => {
         <button type="submit">Create</button>
       </form>
     </>
-  );
-};
-export default CreateNew;
+  )
+}
+export default CreateNew

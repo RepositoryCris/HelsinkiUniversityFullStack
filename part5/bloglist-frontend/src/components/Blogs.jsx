@@ -1,6 +1,6 @@
-import Blog from "./Blog";
-import CreateNew from "./CreateNew";
-import Togglable from "./Togglable";
+import Blog from './Blog'
+import CreateNew from './CreateNew'
+import Togglable from './Togglable'
 
 const Blogs = ({
   blogs,
@@ -18,7 +18,7 @@ const Blogs = ({
   });*/
 
   // In your component's return statement:
-  const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
+  const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes)
 
   return (
     <>
@@ -40,7 +40,7 @@ const Blogs = ({
         />
       ))}
     </>
-  );
-};
+  )
+}
 
-export default Blogs;
+export default Blogs
