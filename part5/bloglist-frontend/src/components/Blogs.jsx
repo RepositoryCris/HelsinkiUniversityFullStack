@@ -16,6 +16,9 @@ const Blogs = ({
     }
   });*/
 
+  // In your component's return statement:
+  const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
+
   return (
     <>
       <h2>Blogs</h2>
@@ -26,7 +29,7 @@ const Blogs = ({
         <CreateNew createBlog={createBlog} />
       </Togglable>
 
-      {blogs.map((blog) => (
+      {sortedBlogs.map((blog) => (
         <Blog key={blog.id} blog={blog} handleLike={handleLike} />
       ))}
     </>
