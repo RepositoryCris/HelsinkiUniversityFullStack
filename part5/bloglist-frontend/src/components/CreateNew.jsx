@@ -15,7 +15,6 @@ const CreateNew = ({ createBlog }) => {
         url: url,
       });
 
-      // Clear the form fields
       setTitle("");
       setAuthor("");
       setUrl("");
