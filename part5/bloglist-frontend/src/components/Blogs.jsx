@@ -9,6 +9,7 @@ const Blogs = ({
   createBlog,
   blogFormRef,
   handleLike,
+  handleDelete,
 }) => {
   /*const filterByUser = blogs.filter((blog) => {
     if (blog.user && blog.user.username === user.username) {
@@ -30,7 +31,13 @@ const Blogs = ({
       </Togglable>
 
       {sortedBlogs.map((blog) => (
-        <Blog key={blog.id} blog={blog} handleLike={handleLike} />
+        <Blog
+          key={blog.id}
+          blog={blog}
+          handleLike={handleLike}
+          user={user}
+          handleDelete={handleDelete}
+        />
       ))}
     </>
   );

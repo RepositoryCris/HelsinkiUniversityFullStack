@@ -92,16 +92,22 @@ const App = () => {
     setUser(null);
   };
 
-  const blogFormRef = useRef(); // 1. Create the ref
+  const blogFormRef = useRef();
 
   const handleCreateBlog = async (blogObject) => {
     try {
       const returnedBlog = await blogService.create(blogObject);
 
-      // 2. Hide the form using the ref
+      const blogWithFullUser = {
+        ...returnedBlog,
+        user: {
+          id: returnedBlog.user,
+          username: user.username,
+          name: user.name,
+        },
+      };
+      setBlogs(blogs.concat(blogWithFullUser));
       blogFormRef.current.toggleVisibility();
-
-      setBlogs(blogs.concat(returnedBlog));
 
       setNotification({
         message: `A new blog ${returnedBlog.title.toUpperCase()} by ${returnedBlog.author.toUpperCase()} added`,
@@ -143,6 +149,24 @@ const App = () => {
     }
   };
 
+  const handleDelete = async (blog) => {
+    if (window.confirm(`Remove blog ${blog.title} by ${blog.author}?`)) {
+      try {
+        await blogService.remove(blog.id);
+        setBlogs(blogs.filter((b) => b.id !== blog.id));
+        setNotification({
+          message: `Deleted ${blog.title} by ${blog.author}`,
+          type: "success",
+        });
+      } catch (error) {
+        setNotification({
+          message: `Error deleting blog: ${error.message}`,
+          type: "error",
+        });
+      }
+    }
+  };
+
   if (user === null) {
     return (
       <div>
@@ -168,6 +192,7 @@ const App = () => {
         createBlog={handleCreateBlog}
         blogFormRef={blogFormRef} // 3. Pass the ref down
         handleLike={handleLike}
+        handleDelete={handleDelete}
       />
     </div>
   );
