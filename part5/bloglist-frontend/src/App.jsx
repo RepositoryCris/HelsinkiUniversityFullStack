@@ -117,6 +117,26 @@ const App = () => {
     }
   };
 
+  const handleLike = async (blog) => {
+    const updatedBlog = {
+      ...blog,
+      likes: blog.likes + 1,
+      // The backend usually expects the user ID as a string for PUT
+      user: blog.user.id,
+    };
+
+    try {
+      const returnedBlog = await blogService.update(blog.id, updatedBlog);
+      // Update local state: replace the old blog with the one from the server
+      setBlogs(blogs.map((b) => (b.id !== blog.id ? b : returnedBlog)));
+    } catch (error) {
+      setNotification({
+        message: `Error updating likes: ${error.message}`,
+        type: "error",
+      });
+    }
+  };
+
   if (user === null) {
     return (
       <div>
@@ -141,6 +161,7 @@ const App = () => {
         handleLogout={handleLogout}
         createBlog={handleCreateBlog}
         blogFormRef={blogFormRef} // 3. Pass the ref down
+        handleLike={handleLike}
       />
     </div>
   );
