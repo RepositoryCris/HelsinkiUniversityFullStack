@@ -438,3 +438,13 @@ test("clicking the button view permit to show content then click hide button to 
   expect(visibleView).toBeVisible();
 });
 ```
+
+### Libraries for testing
+
+| Library / Tool            | Role                    | Function                                                                             | Key UtilityUsed                                            |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| **Vitest**                | **Test Runner**         | The "engine" that executes tests, provides the CLI, and handles mocking.             | `vi.fn()`, `describe`, `test`                              |
+| **React Testing Library** | **Query Utility**       | Provides a way to render components and find elements from a user's perspective.     | `render`, `screen`, `getByText`                            |
+| **User Event**            | **Interaction Utility** | Simulates realistic browser interactions (clicks, typing) better than simple events. | `userEvent.setup()`, `await user.click()`                  |
+| **Jest-DOM**              | **Custom Matchers**     | Extends Vitest/Jest `expect` with "human-readable" DOM assertions.                   | `.toBeVisible()`, `.toBeDefined()`, `.toHaveTextContent()` |
+| **JSDOM**                 | **Environment**         | A "headless" browser simulation that allows React to run in Node.js.                 | (The virtual `document` and `window`)                      |

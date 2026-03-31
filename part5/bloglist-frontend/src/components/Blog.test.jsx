@@ -5,7 +5,8 @@ import Blog from "./Blog";
 // screen.debug(); method debug that can be used to print the HTML of a component to the terminal
 
 const id = "69c5ee76cbb024ab24fdfdd9";
-const mockHandler = vi.fn();
+const mockHandlerLike = vi.fn();
+const mockHandlerDelete = vi.fn();
 
 describe("<Blog />", () => {
   let container;
@@ -29,8 +30,8 @@ describe("<Blog />", () => {
         key={id}
         blog={blog}
         user={user}
-        handleLike={mockHandler}
-        handleDelete={mockHandler}
+        handleLike={mockHandlerLike}
+        handleDelete={mockHandlerDelete}
       />,
     ).container;
   });
@@ -114,5 +115,36 @@ describe("<Blog />", () => {
 
     const visibleView = screen.getByText("view");
     expect(visibleView).toBeVisible();
+  });
+
+  test("clicking the like button twice calls the event handler twice", async () => {
+    const user = userEvent.setup();
+
+    // Reveal the hidden part of the blog
+    const viewButton = screen.getByText("view");
+    await user.click(viewButton);
+
+    // Find the like button
+    const likeButton = screen.getByText("like");
+
+    // Click it twice
+    await user.click(likeButton);
+    await user.click(likeButton);
+
+    // Requirement: Check that the handler was called exactly twice
+    expect(mockHandlerLike.mock.calls).toHaveLength(2);
+
+    // Note: We remove the "likes 7" check because the mock handler
+    // does not actually update the component's props in this test environment.
+  });
+
+  test("clicking the remove button calls the handler once", async () => {
+    const user = userEvent.setup();
+    await user.click(screen.getByText("view"));
+
+    const removeButton = screen.getByText("remove");
+    await user.click(removeButton);
+
+    expect(mockHandlerDelete).toHaveBeenCalledTimes(1);
   });
 });
