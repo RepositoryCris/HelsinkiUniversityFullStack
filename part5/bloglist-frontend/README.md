@@ -439,6 +439,249 @@ test("clicking the button view permit to show content then click hide button to 
 });
 ```
 
+### Testing the forms
+
+for just one role
+
+```js
+input = screen.getByRole("textbox");
+```
+
+for more than one role
+
+```js
+inputs = screen.getAllByRole("textbox");
+```
+
+Example of more than one role
+
+```js
+test("calls onSubmit (in the form) with correct data using getAllByRole for input selection", async () => {
+  const user = userEvent.setup();
+
+  const inputs = screen.getAllByRole("textbox"); //screen.getByRole('textbox') for just one role
+  const createButton = screen.getByText("Create");
+
+  screen.debug(inputs);
+
+  await user.type(inputs[0], "Learning vitest");
+  await user.type(inputs[1], "Cristian M. A. junior developer");
+  await user.type(inputs[2], "http://test.com");
+  await user.click(createButton);
+
+  expect(mockHandlerCreateBlog.mock.calls).toHaveLength(1);
+
+  // Check the first argument of the first call
+  const callArgument = mockHandlerCreateBlog.mock.calls[0][0];
+
+  expect(callArgument.title).toBe("Learning vitest");
+  expect(callArgument.author).toBe("Cristian M. A. junior developer");
+  expect(callArgument.url).toBe("http://test.com");
+});
+```
+
+### About finding the elements
+
+If a label were defined for the input field, the input field could be located using it with the `getByLabelText` method. For example, if we added a label to the input field:
+
+```js
+// ...
+<label>
+  content
+  <input value={newBlog} onChange={(event) => setNewBlog(event.target.value)} />
+</label>
+// ...
+```
+
+The test could locate the input field as follows:
+
+```js
+const input = screen.getByLabelText("content");
+```
+
+Quite often input fields have a placeholder text that hints user what kind of input is expected. Let us add a placeholder to our form:
+
+```js
+placeholder = "write note content here";
+```
+
+Now finding the right input field is easy with the method `getByPlaceholderText`:
+
+```js
+const input = screen.getByPlaceholderText("write note content here");
+```
+
+Sometimes, finding the correct element using the methods described above can be challenging. In such cases, an alternative is the method `querySelector` of the container object, which is returned by render, as was mentioned earlier in this part. Any CSS selector can be used with this method for searching elements in tests.
+
+Consider eg. that we would define a unique id to the input field:
+
+```js
+<input
+  value={newNote}
+  onChange={(event) => setNewNote(event.target.value)}
+  id="note-input"
+/>
+```
+
+The input element could now be found in the test as follows:
+
+```js
+const { container } = render(<NoteForm createNote={createNote} />);
+
+const input = container.querySelector("#note-input");
+```
+
+However, we shall stick to the approach of using `getByPlaceholderText` in the test.
+
+### Test coverage
+
+We can easily find out the coverage of our tests by running them with the command.
+
+```bash
+npm test -- --coverage
+```
+
+The first time you run the command, Vitest will ask you if you want to install the required library `@vitest/coverage-v8`. Install it, and run the command again:
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part5\bloglist-frontend> npm test -- --coverage
+
+> bloglist-frontend@0.0.0 test
+> vitest run
+
+ MISSING DEPENDENCY  Cannot find dependency '@vitest/coverage-v8'
+
+√ Do you want to install @vitest/coverage-v8? ... yes
+
+added 11 packages, changed 4 packages, and audited 371 packages in 22s
+
+133 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+Package @vitest/coverage-v8@4.1.2 installed, re-run the command to start.
+```
+
+Running again the comand npm test -- --coverage
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part5\bloglist-frontend> npm test -- --coverage
+
+> bloglist-frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v4.1.2 D:/HelsinkiUniversityFullStack/part5/bloglist-frontend
+      Coverage enabled with v8
+
+ ✓ src/components/Blog.test.jsx (9 tests) 4501ms
+   ✓ <Blog /> (7)
+     ✓ Renders content 163ms
+     ✓ Renders content using CSS selector 19ms
+     ✓ Does not render content 16ms
+     ✓ clicking the button view permit to show the url, likes and name  497ms
+     ✓ clicking the button view permit to show content then click hide button to hide content 253ms
+     ✓ clicking the like button twice calls the event handler twice 247ms
+     ✓ clicking the remove button calls the handler once 174ms
+   ✓ <CreateNew /> (2)
+     ✓ NewBlogForm: should call createBlog with correct data using index-based role selectors  1458ms
+     ✓ NewBlogForm: should call createBlog with correct data using accessible label mapping  1663ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  19:13:41
+   Duration  9.34s (transform 213ms, setup 608ms, import 434ms, tests 4.50s, environment 2.68s)
+
+ % Coverage report from v8
+---------------|---------|----------|---------|---------|-------------------
+File           | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+---------------|---------|----------|---------|---------|-------------------
+All files      |   96.15 |      100 |     100 |   96.15 |
+ Blog.jsx      |     100 |      100 |     100 |     100 |
+ CreateNew.jsx |   93.75 |      100 |     100 |   93.75 | 22
+---------------|---------|----------|---------|---------|-------------------
+```
+
+Understanding the Coverage Table
+
+## Coverage Report Summary
+
+| Metric             | Description                                               | Result            |
+| ------------------ | --------------------------------------------------------- | ----------------- |
+| **% Stmts**        | Percentage of total code statements executed.             | 96.15%            |
+| **% Branch**       | Did you test both sides of if/else or ternary statements? | 100% (Excellent!) |
+| **% Funcs**        | Were all functions in the file called at least once?      | 100%              |
+| **Uncovered Line** | The specific line number that the tests missed.           | Line 22           |
+
+A HTML report will be generated to the coverage directory. The report will tell us the lines of untested code in each component:
+
+How to see the "Why"
+
+As a Systems Engineer, you'll appreciate the HTML Report. Vitest generates a visual guide that highlights the exact line in red.
+
+1. Look in your project folder for a folder named /coverage.
+
+2. Open /coverage/lcov-report/index.html (or similar) in your browser.
+
+3. Click on CreateNew.jsx.
+
+Should you worry about it?
+
+- The Professional QA Answer: Ideally, you want 100%. If Line 22 is an error message, you should write a test where you submit an empty form to see if that error shows up.
+
+- The Pragmatic Developer Answer: 93%–96% is actually a very high score! If Line 22 is just a minor cleanup line or a "fallback" that is hard to trigger, it’s often okay to leave it.
+
+To have the 100% just create the corresponding tests that covers the observations, then you will have this result.
+
+```bash
+PS D:\HelsinkiUniversityFullStack\part5\bloglist-frontend> npm test -- --coverage
+
+> bloglist-frontend@0.0.0 test
+> vitest run
+
+
+ RUN  v4.1.2 D:/HelsinkiUniversityFullStack/part5/bloglist-frontend
+      Coverage enabled with v8
+
+ ✓ src/components/Blog.test.jsx (11 tests) 5758ms
+   ✓ <Blog /> (7)
+     ✓ Renders content 211ms
+     ✓ Renders content using CSS selector 23ms
+     ✓ Does not render content 17ms
+     ✓ clicking the button view permit to show the url, likes and name  689ms
+     ✓ clicking the button view permit to show content then click hide button to hide content  330ms
+     ✓ clicking the like button twice calls the event handler twice 234ms
+     ✓ clicking the remove button calls the handler once 235ms
+   ✓ <CreateNew /> (4)
+     ✓ NewBlogForm: should call createBlog with correct data using index-based role selectors  1533ms
+     ✓ NewBlogForm: should call createBlog with correct data using accessible label mapping  1356ms6ms
+     ✓ NewBlogForm: should NOT call createBlog if any field is empty 285ms
+     ✓ NewBlogForm: should log an error to the console if createBlog fails  835ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  19:37:26
+   Duration  10.68s (transform 227ms, setup 629ms, import 413ms, tests 5.76s, environment 2.95s)
+
+ % Coverage report from v8
+---------------|---------|----------|---------|---------|-------------------
+File           | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+---------------|---------|----------|---------|---------|-------------------
+All files      |     100 |      100 |     100 |     100 |
+ Blog.jsx      |     100 |      100 |     100 |     100 |
+ CreateNew.jsx |     100 |      100 |     100 |     100 |
+---------------|---------|----------|---------|---------|-------------------
+```
+
+Let's add the directory `coverage/` to the .gitignore file to exclude its contents from version control:
+
+```bash
+//...
+### add in .gitignore file
+coverage
+```
+
 ### Libraries for testing
 
 | Library / Tool            | Role                    | Function                                                                             | Key UtilityUsed                                            |

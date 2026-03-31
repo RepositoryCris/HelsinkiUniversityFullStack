@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Blog from "./Blog";
-
+import CreateNew from "./CreateNew";
 // screen.debug(); method debug that can be used to print the HTML of a component to the terminal
-
+// screen.debug(element);
+// mockHandler.mockClear(); you can put this in the beforeEach
 const id = "69c5ee76cbb024ab24fdfdd9";
 const mockHandlerLike = vi.fn();
 const mockHandlerDelete = vi.fn();
@@ -146,5 +147,104 @@ describe("<Blog />", () => {
     await user.click(removeButton);
 
     expect(mockHandlerDelete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("<CreateNew />", () => {
+  let container;
+
+  const mockHandlerCreateBlog = vi.fn();
+
+  beforeEach(() => {
+    mockHandlerCreateBlog.mockClear();
+
+    container = render(
+      <CreateNew createBlog={mockHandlerCreateBlog} />,
+    ).container;
+  });
+
+  test("NewBlogForm: should call createBlog with correct data using index-based role selectors", async () => {
+    const user = userEvent.setup();
+
+    const inputs = screen.getAllByRole("textbox"); //screen.getByRole('textbox') for just one role
+    const createButton = screen.getByText("Create");
+
+    await user.type(inputs[0], "Learning vitest");
+    await user.type(inputs[1], "Cristian M. A. junior developer");
+    await user.type(inputs[2], "http://test.com");
+    await user.click(createButton);
+
+    expect(mockHandlerCreateBlog.mock.calls).toHaveLength(1);
+
+    // Check the first argument of the first call
+    const callArgument = mockHandlerCreateBlog.mock.calls[0][0];
+
+    expect(callArgument.title).toBe("Learning vitest");
+    expect(callArgument.author).toBe("Cristian M. A. junior developer");
+    expect(callArgument.url).toBe("http://test.com");
+  });
+
+  test("NewBlogForm: should call createBlog with correct data using accessible label mapping", async () => {
+    const user = userEvent.setup();
+
+    const inputTitle = screen.getByLabelText("title:");
+    const inputAuthor = screen.getByLabelText("author:");
+    const inputUrl = screen.getByLabelText("url:");
+
+    const createButton = screen.getByText("Create");
+
+    await user.type(inputTitle, "Learning vitest");
+    await user.type(inputAuthor, "Cristian M. A. junior developer");
+    await user.type(inputUrl, "http://test.com");
+    await user.click(createButton);
+
+    expect(mockHandlerCreateBlog.mock.calls).toHaveLength(1);
+
+    // Check the first argument of the first call
+    const callArgument = mockHandlerCreateBlog.mock.calls[0][0];
+
+    expect(callArgument.title).toBe("Learning vitest");
+    expect(callArgument.author).toBe("Cristian M. A. junior developer");
+    expect(callArgument.url).toBe("http://test.com");
+  });
+
+  test("NewBlogForm: should NOT call createBlog if any field is empty", async () => {
+    const user = userEvent.setup();
+    const createButton = screen.getByText("Create");
+
+    // We only fill the author, leaving title and url empty
+    const authorInput = screen.getByLabelText("author:");
+    await user.type(authorInput, "Cristian");
+
+    await user.click(createButton);
+
+    // The guard stops the execution before mockHandlerCreateBlog is ever called
+    expect(mockHandlerCreateBlog).not.toHaveBeenCalled();
+  });
+
+  // TEST 4: The "Error Path" (Hits the Catch Block for 100% Coverage)
+  test("NewBlogForm: should log an error to the console if createBlog fails", async () => {
+    const user = userEvent.setup();
+
+    // Force the mock to return a rejected promise
+    mockHandlerCreateBlog.mockRejectedValueOnce(new Error("API Failure"));
+
+    // Spy on console.error to verify the catch block runs
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const inputTitle = screen.getByLabelText("title:");
+    const createButton = screen.getByText("Create");
+
+    // Fill minimum required data to bypass the frontend guard
+    await user.type(inputTitle, "Error Test");
+    await user.type(screen.getByLabelText("author:"), "Tester");
+    await user.type(screen.getByLabelText("url:"), "http://error.com");
+
+    await user.click(createButton);
+
+    // Verify console.error was triggered by the catch block
+    expect(consoleSpy).toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
   });
 });
