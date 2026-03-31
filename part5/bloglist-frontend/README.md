@@ -261,3 +261,180 @@ describe("<Blog />", () => {
   });
 });
 ```
+
+### Debugging tests
+
+We typically run into many different kinds of problems when writing our tests.
+
+Object screen has method debug that can be used to print the HTML of a component to the terminal. If we change the test as follows:
+
+```js
+screen.debug();
+```
+
+It is also possible to use the same method to print a wanted `element` to console:
+
+```js
+//...
+const element = screen.getByText(
+  "Component testing is done with react-testing-library",
+);
+
+screen.debug(element);
+
+expect(element).toBeDefined();
+//...
+```
+
+### Clicking buttons in tests
+
+Let us install a library user-event that makes simulating user input a bit easier:
+
+```bash
+npm install --save-dev @testing-library/user-event
+```
+
+Testing this functionality can be accomplished like this:
+
+```js
+//...
+import userEvent from "@testing-library/user-event";
+//...
+
+const mockHandler = vi.fn();
+
+render(<Note note={note} toggleImportance={mockHandler} />);
+
+const user = userEvent.setup();
+const button = screen.getByText("make not important");
+await user.click(button);
+
+expect(mockHandler.mock.calls).toHaveLength(1);
+```
+
+There are a few interesting things related to this test. The event handler is a mock function defined with Vitest:
+
+```js
+const mockHandler = vi.fn();
+```
+
+A session is started to interact with the rendered component:
+
+```js
+const user = userEvent.setup();
+```
+
+The test finds the button based on the text from the rendered component and clicks the element:
+
+```js
+const button = screen.getByText("make not important");
+await user.click(button);
+```
+
+Clicking happens with the method click of the userEvent-library.
+
+The expectation of the test uses toHaveLength to verify that the mock function has been called exactly once:
+
+```js
+expect(mockHandler.mock.calls).toHaveLength(1);
+```
+
+The calls to the mock function are saved to the array mock.calls within the mock function object.
+
+Mock objects and functions are commonly used stub components in testing that are used for replacing dependencies of the components being tested. Mocks make it possible to return hardcoded responses, and to verify the number of times the mock functions are called and with what parameters.
+
+```js
+//...
+const id = "69c5ee76cbb024ab24fdfdd9";
+const mockHandler = vi.fn();
+
+describe("<Blog />", () => {
+  let container;
+  const blog = {
+    title: "Practicing react ",
+    author: "Cristian",
+    url: "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
+    likes: 5,
+    user: {
+      username: "root",
+      name: "Superuser",
+      id: "69c3278153f22852f28b7859",
+    },
+    id: "69c5ee76cbb024ab24fdfdd9",
+  };
+  const user = { username: "root", name: "Superuser" };
+
+  beforeEach(() => {
+    container = render(
+      <Blog
+        key={id}
+        blog={blog}
+        user={user}
+        handleLike={mockHandler}
+        handleDelete={mockHandler}
+      />,
+    ).container;
+  });
+
+//...
+
+test("clicking the button view permit to show the url and likes", async () => {
+  const user = userEvent.setup();
+
+  const viewButton = screen.getByText("view");
+  await user.click(viewButton);
+
+  const url = screen.getByText(
+    "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
+  );
+  expect(url).toBeVisible();
+
+  const likes = screen.getByText("likes 5");
+  expect(likes).toBeVisible();
+
+  const name = screen.getByText("Superuser");
+  expect(name).toBeVisible();
+});
+```
+
+The beforeEach function gets called before each test, which then renders the `Togglable` component.
+
+The remaining tests use the toBeVisible method to verify that the child component of the `Togglable` component is not visible initially, i.e. that the style of the div element contains { display: 'none' }. Another test verifies that when the button is pressed the component is visible, meaning that the style for hiding it is no longer assigned to the component.
+
+```js
+test("clicking the button view permit to show content then click hide button to hide content", async () => {
+  const user = userEvent.setup();
+
+  const viewButton = screen.getByText("view");
+  await user.click(viewButton);
+
+  const url = screen.getByText(
+    "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
+  );
+  expect(url).toBeVisible();
+
+  const likes = screen.getByText("likes 5");
+  expect(likes).toBeVisible();
+
+  const name = screen.getByText("Superuser");
+  expect(name).toBeVisible();
+
+  const hideButton = screen.getByText("hide");
+  await user.click(hideButton);
+
+  // Use queryByText because the element url, likes and name are removed from the DOM
+  const noUrl = screen.queryByText(
+    "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
+  );
+  expect(noUrl).toBeNull();
+
+  const noLikes = screen.queryByText("likes 5");
+  expect(noLikes).toBeNull();
+
+  const noName = screen.queryByText("Superuser");
+  expect(noName).toBeNull();
+
+  const visibleView = screen.getByText("view");
+  expect(visibleView).toBeVisible();
+});
+```
