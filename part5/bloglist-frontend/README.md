@@ -129,3 +129,88 @@ window.localStorage.removeItem('loggedBlogappUser');
 setUser(null);
 };
 ```
+
+## Testing React apps
+
+Start by installing `Vitest` and the `jsdom` library simulating a web browser:
+
+```bash
+npm install --save-dev vitest jsdom
+```
+
+- library that will help us render components for testing purposes `react-testing-library`
+
+- It is also worth extending the expressive power of the tests with the library `jest-dom`.
+
+```bash
+npm install --save-dev @testing-library/react @testing-library/jest-dom
+```
+
+### configurations for vitest
+
+Add a script to the `package.json` file to run the tests:
+
+```json
+{
+  "scripts": {
+    // ...
+    "test": "vitest run"
+  }
+  // ...
+}
+```
+
+Let's create a file `testSetup.js` in the project root with the following content
+
+```js
+import { afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+
+afterEach(() => {
+  cleanup();
+});
+```
+
+Now, after each test, the function cleanup is executed to reset jsdom, which is simulating the browser.
+
+Expand the vite.config.js file as follows
+
+```js
+export default defineConfig({
+  // ...
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: "./testSetup.js",
+  },
+});
+```
+
+With `globals: true`, there is no need to import keywords such as `describe`, `test` and `expect` into the tests.
+
+Run the test with command npm test:
+
+```bash
+npm test
+```
+
+`Eslint` complains about the keywords test and expect in the tests. The problem can be solved by adding the following configuration to the eslint.config.js file:
+
+```js
+// ...
+
+export default [
+  // ...
+  {
+    files: ["**/*.test.{js,jsx}"],
+    languageOptions: {
+      globals: {
+        ...globals.vitest,
+      },
+    },
+  },
+];
+```
+
+This is how ESLint is informed that Vitest keywords are globally available in test files.
