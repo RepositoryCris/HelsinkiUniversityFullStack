@@ -682,6 +682,68 @@ Let's add the directory `coverage/` to the .gitignore file to exclude its conten
 coverage
 ```
 
+## Key Points: Frontend Integration & Snapshot Testing
+
+### Integration Tests
+
+- **Test collaboration** between multiple components working together
+- **More difficult** than unit tests due to needing to mock server data
+- The course chose **end-to-end (E2E) tests** instead (covered in final chapter)
+
+### Snapshot Testing (Vitest)
+
+**What it is:**
+
+- Compares component's **HTML output before and after changes**
+
+**How it works:**
+
+1. Takes a "snapshot" of the component's HTML
+2. When code changes, compares new HTML to saved snapshot
+3. Notifies developer of **any differences**
+
+**Developer's role:**
+
+- Review the change
+- Tell Vitest if the change was **intended** (update snapshot) or **unintended** (bug found)
+
+**Advantages:**
+
+- **No need to write test logic** manually
+- Easy to adopt
+- Catches **unexpected UI changes** automatically
+
+**Key distinction:**
+
+> Snapshot testing notifies developers of HTML changes. If unexpected → likely a bug.
+
+---
+
+### Frontend integration tests
+
+- Test multiple components together
+
+- Harder than unit tests (need to mock server data)
+
+- Course uses E2E tests instead
+
+| Test Type             | What It Tests                        | Complexity    |
+| --------------------- | ------------------------------------ | ------------- |
+| **Unit Tests**        | Individual components in isolation   | Lower         |
+| **Integration Tests** | Multiple components working together | Higher        |
+| **E2E Tests**         | Whole application flow               | Highest       |
+| **Snapshot Tests**    | HTML changes between versions        | Minimal setup |
+
+#### Snapshot Testing
+
+- Compares component HTML before/after changes
+
+- Alerts developer of differences
+
+- Developer decides: intended (update) or bug (fix)
+
+- Benefits: No test logic needed, easy to use, catches unexpected UI changes
+
 ### Libraries for testing
 
 | Library / Tool            | Role                    | Function                                                                             | Key UtilityUsed                                            |
