@@ -86,4 +86,52 @@ describe("Blog app", () => {
       await expect(mainBlogTitle).toBeVisible();
     });
   });
+
+  describe("When logged in", () => {
+    beforeEach(async ({ page }) => {
+      const labelUsername = page.getByLabel("username");
+      await expect(labelUsername).toBeVisible();
+      await labelUsername.fill("crisdev");
+
+      const labelPassword = page.getByLabel("password");
+      await expect(labelPassword).toBeVisible();
+      await labelPassword.fill("reactrouter");
+
+      const loginButton = page.getByRole("button", { name: "login" });
+      await loginButton.click();
+
+      const mainBlogTitle = page.getByText("Blogs");
+      await expect(mainBlogTitle).toBeVisible();
+    });
+
+    test("a new blog can be created", async ({ page }) => {
+      const createNewBlogButton = page.getByRole("button", {
+        name: "create new blog",
+      });
+      await createNewBlogButton.click();
+
+      const labelTitle = page.getByLabel("title:");
+      await expect(labelTitle).toBeVisible();
+      await labelTitle.fill("Testing with playwright");
+
+      const labelAuthor = page.getByLabel("author:");
+      await expect(labelAuthor).toBeVisible();
+      await labelAuthor.fill("Cristian junior fullstack web developer");
+
+      const labelUrl = page.getByLabel("url:");
+      await expect(labelUrl).toBeVisible();
+      await labelUrl.fill("fullstackWebDeveloper.com");
+
+      const createButton = page.getByRole("button", {
+        name: "Create",
+      });
+      await createButton.click();
+
+      await expect(
+        page.getByText(
+          "Testing with playwright by Cristian junior fullstack web developer",
+        ),
+      ).toBeVisible();
+    });
+  });
 });

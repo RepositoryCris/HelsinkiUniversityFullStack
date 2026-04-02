@@ -516,3 +516,89 @@ await expect(page.getByText("CRISDEV logged in")).not.toBeVisible();
 ```
 
 ## Testing blog creation
+
+Create a test that adds a new blog to the application:
+
+```js
+describe("When logged in", () => {
+  beforeEach(async ({ page }) => {
+    const labelUsername = page.getByLabel("username");
+    await expect(labelUsername).toBeVisible();
+    await labelUsername.fill("crisdev");
+
+    const labelPassword = page.getByLabel("password");
+    await expect(labelPassword).toBeVisible();
+    await labelPassword.fill("reactrouter");
+
+    const loginButton = page.getByRole("button", { name: "login" });
+    await loginButton.click();
+
+    const mainBlogTitle = page.getByText("Blogs");
+    await expect(mainBlogTitle).toBeVisible();
+  });
+
+  test("a new blog can be created", async ({ page }) => {
+    const createNewBlogButton = page.getByRole("button", {
+      name: "create new blog",
+    });
+    await createNewBlogButton.click();
+
+    const labelTitle = page.getByLabel("title:");
+    await expect(labelTitle).toBeVisible();
+    await labelTitle.fill("Testing with playwright");
+
+    const labelAuthor = page.getByLabel("author:");
+    await expect(labelAuthor).toBeVisible();
+    await labelAuthor.fill("Cristian junior fullstack web developer");
+
+    const labelUrl = page.getByLabel("url:");
+    await expect(labelUrl).toBeVisible();
+    await labelUrl.fill("fullstackWebDeveloper.com");
+
+    const createButton = page.getByRole("button", {
+      name: "Create",
+    });
+    await createButton.click();
+
+    await expect(
+      page.getByText(
+        "Testing with playwright by Cristian junior fullstack web developer",
+      ),
+    ).toBeVisible();
+  });
+});
+```
+
+## Running tests one by one
+
+By default, Playwright always runs all tests, and as the number of tests increases, it becomes time-consuming. When developing a new test or debugging a broken one, the test can be defined instead than with the command `test`, with the command `test.only`, in which case Playwright will run only that test:
+
+```js
+describe(() => {
+  // this is the only test executed!
+  test.only("login fails with wrong password", async ({ page }) => {
+    // ...
+  });
+
+  // this test is skipped...
+  test("user can login with correct credentials", async ({ page }) => {
+    // ...
+  });
+
+  // ...
+});
+```
+
+When the test is ready, `only` can and \*_should be deleted_.
+
+Another option to run a single test is to use a command line parameter:
+
+```bash
+npm test -- -g "succeeds with correct credentials"
+```
+
+or just to run in chrome
+
+```bash
+npm test -- -g "succeeds with correct credentials" --project chromium
+```
