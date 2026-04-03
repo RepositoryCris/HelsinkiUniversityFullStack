@@ -1,6 +1,8 @@
 const { test, expect, beforeEach, describe } = require("@playwright/test");
 const { loginWith, createBlog } = require("./helper");
 
+//after you create a blog use .waitFor() to proceed with the next verification
+
 describe("Blog app", () => {
   beforeEach(async ({ page, request }) => {
     // 1. Reset the database
@@ -220,6 +222,54 @@ describe("Blog app", () => {
       // 6. Verify the blog is gone from the UI
       // Use the 'content' variable to ensure consistency with what we looked for earlier
       await expect(page.getByText(content)).not.toBeVisible();
+    });
+
+    test("only the user who created a blog can see the delete button", async ({
+      page,
+      request,
+    }) => {
+      // Now loginWith will find the labels because the page is loaded and reset
+      //await loginWith(page, "crisdev", "reactrouter");
+
+      // Create second user
+      await request.post("/api/users", {
+        data: {
+          username: "otheruser",
+          name: "Other User",
+          password: "otherpassword",
+        },
+      });
+
+      const title = "Blog recently created by Cris";
+      const author = "Cris";
+      const url = "cris.com";
+      await createBlog(page, title, author, url);
+
+      // Use the exact text your UI shows
+      await page.getByText(`${title} by Cris`).waitFor();
+
+      const blogContainer = page.locator(".blog").filter({ hasText: title });
+      await blogContainer.getByRole("button", { name: "view" }).click();
+
+      // Verify owner sees it
+      await expect(
+        blogContainer.getByRole("button", { name: "remove" }),
+      ).toBeVisible();
+
+      // 3. Logout
+      await page.getByRole("button", { name: "logout" }).click();
+
+      // 4. Login as other user
+      await loginWith(page, "otheruser", "otherpassword");
+
+      // 5. Check visibility
+      const otherBlogContainer = page
+        .locator(".blog")
+        .filter({ hasText: title });
+      await otherBlogContainer.getByRole("button", { name: "view" }).click();
+      await expect(
+        otherBlogContainer.getByRole("button", { name: "remove" }),
+      ).not.toBeVisible();
     });
   });
 });
