@@ -602,3 +602,229 @@ or just to run in chrome
 ```bash
 npm test -- -g "succeeds with correct credentials" --project chromium
 ```
+
+## Helper functions for tests
+
+Isolate the code that handles the login as a helper function, which is placed e.g. in the file `tests/helper.js`:
+
+```js
+const loginWith = async (page, username, password) => {
+  await page.getByLabel("username").fill(username);
+
+  await page.getByLabel("password").fill(password);
+
+  await page.getByRole("button", { name: "login" }).click();
+};
+
+export { loginWith };
+```
+
+import inside `blog_app.spec.js`
+
+```js
+const { loginWith } = require("./helper");
+```
+
+And use the helper function where you want
+
+```js
+await loginWith(page, "crisdev", "reactrouter");
+```
+
+do the same for creating a blog
+
+```js
+//...
+const createBlog = async (page, title, author, url) => {
+  await page
+    .getByRole("button", {
+      name: "create new blog",
+    })
+    .click();
+
+  await page.getByLabel("title:").fill(title);
+
+  await page.getByLabel("author:").fill(author);
+
+  await page.getByLabel("url:").fill(url);
+
+  await page
+    .getByRole("button", {
+      name: "Create",
+    })
+    .click();
+};
+
+export { loginWith, createBlog };
+```
+
+And use it where you desire
+
+```js
+test("a new blog can be created", async ({ page }) => {
+  await createBlog(
+    page,
+    "Testing with playwright",
+    "Cristian junior fullstack web developer",
+    "fullstackWebDeveloper.com",
+  );
+  await expect(
+    page.getByText(
+      "Testing with playwright by Cristian junior fullstack web developer",
+    ),
+  ).toBeVisible();
+});
+```
+
+There is one more annoying feature in our tests. The frontend address `http:localhost:5173` and the backend address `http:localhost:3001` are hardcoded for tests. Of these, the address of the backend is actually useless, because a proxy has been defined in the Vite configuration of the frontend, which forwards all requests made by the frontend to the address `http:localhost:5173/api` to the backend:
+
+```js
+export default defineConfig({
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
+  },
+  // ...
+});
+```
+
+So we can replace all the addresses in the tests from `http://localhost:3001/api/...` to `http://localhost:5173/api/...`
+
+We can now define the `baseUrl` for the application in the tests configuration file `playwright.config.js`:
+
+```js
+export default defineConfig({
+  // ...
+  use: {
+    baseURL: "http://localhost:5173",
+    // ...
+  },
+  // ...
+});
+```
+
+All the commands in the tests that use the application url, e.g.
+
+```js
+await page.goto("http://localhost:5173");
+await request.post("http://localhost:5173/api/testing/reset");
+```
+
+can now be transformed into:
+
+```js
+await page.goto("/");
+await request.post("/api/testing/reset");
+```
+
+## Test development and debugging
+
+If, and when the tests don't pass and you suspect that the fault is in the tests instead of in the code, you should run the tests in `debug` mode.
+
+The following command runs the problematic test in debug mode:
+
+```bash
+npm test -- -g'a new blog can be created' --debug
+```
+
+Playwright-inspector shows the progress of the tests step by step.
+The **arrow-dot button** at the top takes the tests one step further. The elements found by the locators and the interaction with the browser are visualized in the browser
+
+- By default, debug steps through the test command by command.
+- If it is a complex test, it can be quite a burden to step through the test to the point of interest.
+- This can be avoided by using the command await `page.pause()`
+
+```bash
+  await page.pause()
+```
+
+Now in the test you can go to page.pause() in one step, by pressing the green arrow symbol in the inspector.
+
+Slow down the insert operations by using **`waitFor()`** after saving each blog. This ensures the test waits for the newly created blog to appear in the DOM before proceeding to the next creation.
+
+```bash
+await page.getByText(content).waitFor()
+```
+
+Instead of, or alongside debugging mode, running tests in UI mode can be useful. As already mentioned, tests are started in UI mode as follows:
+
+```bash
+npm run test -- --ui
+```
+
+Almost the same as UI mode is use of the Playwright's `Trace Viewer`. The idea is that a "visual trace" of the tests is saved, which can be viewed if necessary after the tests have been completed. A trace is saved by running the tests as follows:
+
+```bash
+npm run test -- --trace on
+npm run test -- --project chromium --trace on
+```
+
+If necessary, Trace can be viewed with the command
+
+```bash
+npx playwright show-report
+```
+
+or with the npm script we defined `npm run test:report`
+
+Trace looks practically the same as running tests in UI mode.
+
+UI mode and Trace Viewer also offer the possibility of assisted search for locators. This is done **_by pressing the double circle_** on the left side of the lower bar, and then by clicking on the desired user interface element.
+
+Playwright displays the element locator, this is the suggestion when clicking **`Pick locator`** in **TRACE MODE**
+
+```js
+getByText("✅A new blog TESTING WITH");
+```
+
+Playwright suggests the following as the locator for the third note
+
+```js
+getByText("Testing with playwright 222");
+locator("div").filter({ hasText: "Testing with playwright 333" }).nth(2);
+locator("div").filter({ hasText: "Testing with playwright 444" }).nth(3);
+```
+
+Or locating the the button:
+
+```js
+getByRole("button", { name: "view" }).first();
+getByRole("button", { name: "view" }).nth(1);
+getByRole("button", { name: "view" }).nth(2);
+```
+
+Other example could be:
+
+```bash
+page.locator('li').filter({ hasText: 'third note' }).getByRole('button')
+```
+
+The method `page.locator` is called with the argument div or li, i.e. we search for all div or li elements on the page, of which there are three in total.
+
+After this, using the locator.filter method, we narrow down to the li element that contains the text third note and the button element inside it is taken using the locator.getByRole method.
+
+The locator generated by Playwright is somewhat different from the locator used by our tests, which was
+
+```bash
+page.getByText('first note').locator('..').getByRole('button', { name: 'make not important' })
+```
+
+Which of the locators is better is probably a matter of taste.
+
+Playwright also includes a test generator that makes it possible to **"record"** a test through the user interface. The test generator is started with the command:
+
+```bash
+npx playwright codegen http://localhost:5173/
+```
+
+When the Record mode is on, the test generator "records" the user's interaction in the Playwright inspector, from where it is possible to copy the locators and actions to the tests.
+
+You can interact with the APP and record every movement while you can also generate the test.
+
+Instead of the command line, Playwright can also be used via the `VS Code` plugin. The plugin offers many convenient features, e.g. use of breakpoints when debugging tests.
+
+To avoid problem situations and increase understanding, it is definitely worth browsing Playwright's high-quality documentation `https://playwright.dev/docs/intro`

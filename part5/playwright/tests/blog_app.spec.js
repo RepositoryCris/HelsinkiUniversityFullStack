@@ -1,13 +1,14 @@
 const { test, expect, beforeEach, describe } = require("@playwright/test");
+const { loginWith, createBlog } = require("./helper");
 
 describe("Blog app", () => {
   beforeEach(async ({ page, request }) => {
     // 1. Reset the database
     // Ensure your backend has the /api/testing/reset endpoint enabled!
-    await request.post("http://localhost:3003/api/testing/reset");
+    await request.post("/api/testing/reset");
 
     // 2. Create a user for the backend
-    await request.post("http://localhost:3003/api/users", {
+    await request.post("/api/users", {
       data: {
         username: "crisdev",
         name: "cris junior developer",
@@ -15,7 +16,7 @@ describe("Blog app", () => {
       },
     });
 
-    await page.goto("http://localhost:5173");
+    await page.goto("/");
   });
 
   test("Login form is shown", async ({ page }) => {
@@ -40,16 +41,7 @@ describe("Blog app", () => {
 
   describe("Login", () => {
     test("fails with wrong credentials", async ({ page }) => {
-      const labelUsername = page.getByLabel("username");
-      await expect(labelUsername).toBeVisible();
-      await labelUsername.fill("crisdev");
-
-      const labelPassword = page.getByLabel("password");
-      await expect(labelPassword).toBeVisible();
-      await labelPassword.fill("reactrouterwrongpassword");
-
-      const loginButton = page.getByRole("button", { name: "login" });
-      await loginButton.click();
+      await loginWith(page, "crisdev", "reactrouterwrongpassword");
 
       const mainBlogTitle = page.getByText("Blogs");
       await expect(mainBlogTitle).not.toBeVisible();
@@ -71,16 +63,7 @@ describe("Blog app", () => {
     });
 
     test("succeeds with correct credentials", async ({ page }) => {
-      const labelUsername = page.getByLabel("username");
-      await expect(labelUsername).toBeVisible();
-      await labelUsername.fill("crisdev");
-
-      const labelPassword = page.getByLabel("password");
-      await expect(labelPassword).toBeVisible();
-      await labelPassword.fill("reactrouter");
-
-      const loginButton = page.getByRole("button", { name: "login" });
-      await loginButton.click();
+      await loginWith(page, "crisdev", "reactrouter");
 
       const mainBlogTitle = page.getByText("Blogs");
       await expect(mainBlogTitle).toBeVisible();
@@ -89,49 +72,75 @@ describe("Blog app", () => {
 
   describe("When logged in", () => {
     beforeEach(async ({ page }) => {
-      const labelUsername = page.getByLabel("username");
-      await expect(labelUsername).toBeVisible();
-      await labelUsername.fill("crisdev");
-
-      const labelPassword = page.getByLabel("password");
-      await expect(labelPassword).toBeVisible();
-      await labelPassword.fill("reactrouter");
-
-      const loginButton = page.getByRole("button", { name: "login" });
-      await loginButton.click();
-
-      const mainBlogTitle = page.getByText("Blogs");
-      await expect(mainBlogTitle).toBeVisible();
+      await loginWith(page, "crisdev", "reactrouter");
     });
 
     test("a new blog can be created", async ({ page }) => {
-      const createNewBlogButton = page.getByRole("button", {
-        name: "create new blog",
-      });
-      await createNewBlogButton.click();
-
-      const labelTitle = page.getByLabel("title:");
-      await expect(labelTitle).toBeVisible();
-      await labelTitle.fill("Testing with playwright");
-
-      const labelAuthor = page.getByLabel("author:");
-      await expect(labelAuthor).toBeVisible();
-      await labelAuthor.fill("Cristian junior fullstack web developer");
-
-      const labelUrl = page.getByLabel("url:");
-      await expect(labelUrl).toBeVisible();
-      await labelUrl.fill("fullstackWebDeveloper.com");
-
-      const createButton = page.getByRole("button", {
-        name: "Create",
-      });
-      await createButton.click();
-
+      await createBlog(
+        page,
+        "Testing with playwright",
+        "Cristian junior fullstack web developer",
+        "fullstackWebDeveloper.com",
+      );
       await expect(
         page.getByText(
           "Testing with playwright by Cristian junior fullstack web developer",
         ),
       ).toBeVisible();
+    });
+
+    test.only("a blog can be liked", async ({ page }) => {
+      const blogs = [
+        {
+          title: "Testing with playwright blog # 1",
+          author: "Cristian junior web developer # 1",
+          url: "juniorWebDeveloper1.com",
+        },
+        {
+          title: "Testing with playwright blog # 2",
+          author: "Cristian junior web developer # 2",
+          url: "juniorWebDeveloper2.com",
+        },
+        {
+          title: "Testing with playwright blog # 3",
+          author: "Cristian junior web developer # 3",
+          url: "juniorWebDeveloper3.com",
+        },
+        {
+          title: "Testing with playwright blog # 4",
+          author: "Cristian junior web developer # 4",
+          url: "juniorWebDeveloper4.com",
+        },
+        {
+          title: "Testing with playwright blog # 5",
+          author: "Cristian junior web developer # 5",
+          url: "juniorWebDeveloper5.com",
+        },
+      ];
+
+      // Create all blogs
+      for (const blog of blogs) {
+        await createBlog(page, blog.title, blog.author, blog.url);
+        await page.getByText(`${blog.title} by ${blog.author}`).waitFor();
+      }
+
+      const content = `${blogs[4].title} ${blogs[4].author}`;
+
+      // 1. Target the specific blog component using its class and content
+      const blogContainer = page.locator(".blog").filter({ hasText: content });
+
+      // 2. Click the view button inside THAT specific blog
+      await blogContainer.getByRole("button", { name: "view" }).click();
+
+      await expect(blogContainer.getByText("likes 0")).toBeVisible();
+
+      // 3. Click the like button inside THAT specific blog
+      const likeButton = blogContainer.getByRole("button", { name: "like" });
+      await likeButton.click();
+
+      // 4. Verify the like increment within that specific container
+      // React code renders "likes {blog.likes}"
+      await expect(blogContainer.getByText("likes 1")).toBeVisible();
     });
   });
 });
