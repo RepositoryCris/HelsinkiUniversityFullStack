@@ -828,3 +828,67 @@ You can interact with the APP and record every movement while you can also gener
 Instead of the command line, Playwright can also be used via the `VS Code` plugin. The plugin offers many convenient features, e.g. use of breakpoints when debugging tests.
 
 To avoid problem situations and increase understanding, it is definitely worth browsing Playwright's high-quality documentation `https://playwright.dev/docs/intro`
+
+## About the dialog
+
+In React: Your handleDelete is waiting for a boolean (true/false).
+
+In Playwright: dialog.accept() sends true. dialog.dismiss() sends false.
+
+The Flow: 1. User clicks Remove. 2. handleDelete pauses at window.confirm. 3. Playwright's listener "wakes up," sees the message, and clicks OK. 4. handleDelete resumes, calls the blogService, and updates your blogs state. 5. The test sees the blog disappear and passes.
+
+Think of the Playwright dialog handler as a "Listener" that you set up before the action happens. Because `window.confirm` is a "blocking" function (it stops all other code from running until a choice is made), Playwright needs to know what to do ahead of time.
+
+Here is the basic syntax broken down for your specific `handleDelete` function.
+
+- Basic Template
+
+```js
+// 1. SET THE LISTENER (The "Trap")
+page.on("dialog", async (dialog) => {
+  // Use dialog.message() to see the text (e.g., "Remove blog...")
+  // Use dialog.accept() to click "OK" (returns true to your React code)
+  // Use dialog.dismiss() to click "Cancel" (returns false to your React code)
+  await dialog.accept();
+});
+
+// 2. TRIGGER THE DIALOG (The "Action")
+await page.getByRole("button", { name: "remove" }).click();
+```
+
+- Matching Your App's Logic
+
+React code, has the message as:
+
+```js
+`Remove blog ${blog.title} by ${blog.author}?`;
+```
+
+To make your test high-quality, you can verify the message inside the dialog before accepting it.
+
+```js
+// Define the expected text based on your blogs array
+const expectedMsg = `Remove blog ${blogs[5].title} by ${blogs[5].author}?`;
+
+// Register the listener
+page.on("dialog", async (dialog) => {
+  // Check if the message is what we expect
+  if (dialog.message() === expectedMsg) {
+    await dialog.accept(); // Clicks OK -> React gets 'true'
+  } else {
+    await dialog.dismiss(); // Clicks Cancel -> React gets 'false'
+  }
+});
+
+// Now click the button that triggers window.confirm
+await blogContainer.getByRole("button", { name: "remove" }).click();
+```
+
+### Summary of Dialog Methods
+
+| Method             | Action in Browser | Result in React `window.confirm`      |
+| ------------------ | ----------------- | ------------------------------------- |
+| `dialog.accept()`  | Clicks OK         | Returns `true`                        |
+| `dialog.dismiss()` | Clicks Cancel     | Returns `false`                       |
+| `dialog.message()` | Reads the text    | N/A                                   |
+| `dialog.type()`    | Returns type      | `"confirm"`, `"alert"`, or `"prompt"` |
