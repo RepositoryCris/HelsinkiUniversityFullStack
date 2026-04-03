@@ -271,5 +271,89 @@ describe("Blog app", () => {
         otherBlogContainer.getByRole("button", { name: "remove" }),
       ).not.toBeVisible();
     });
+
+    test("blogs are sorted by likes in descending order", async ({ page }) => {
+      // 1. Define modular test data
+      const testBlogs = [
+        {
+          title: "Most liked blog",
+          author: "Author A",
+          url: "url1.com",
+          likes: 8,
+        },
+        {
+          title: "Second most liked",
+          author: "Author B",
+          url: "url2.com",
+          likes: 4,
+        },
+        {
+          title: "Least liked blog",
+          author: "Author C",
+          url: "url3.com",
+          likes: 2,
+        },
+      ];
+
+      // 2. Setup: Create all blogs using the data array
+      for (const blog of testBlogs) {
+        await createBlog(page, blog.title, blog.author, blog.url);
+        // Ensure the blog is rendered before proceeding
+        await page.getByText(`${blog.title} by ${blog.author}`).waitFor();
+      }
+
+      // 3. Action: Perform likes based on the defined counts
+      for (const blog of testBlogs) {
+        if (blog.likes > 0) {
+          const blogContainer = page
+            .locator(".blog")
+            .filter({ hasText: blog.title });
+
+          // Expand details to access the like button
+          await blogContainer.getByRole("button", { name: "view" }).click();
+
+          // Click the like button the specified number of times
+          for (let i = 0; i < blog.likes; i++) {
+            const likeButton = blogContainer.getByRole("button", {
+              name: "like",
+            });
+            await likeButton.click();
+
+            // Professional wait: Ensure the UI increments before the next click
+            // This avoids race conditions in the state update
+            await blogContainer.getByText(`likes ${i + 1}`).waitFor();
+          }
+        }
+      }
+
+      // 4. Verification: Ensure all blogs are expanded to read like counts (if hidden)
+      // Check for 'view' buttons and click them if they exist
+      const viewButtons = await page
+        .getByRole("button", { name: "view" })
+        .all();
+      for (const button of viewButtons) {
+        await button.click();
+      }
+
+      // 5. Extraction: Map the UI state to a numerical array
+      // We target the specific element holding the number
+      const likesLocators = page.locator(".blog-likes-count");
+      const likesStrings = await likesLocators.allTextContents();
+
+      // Clean the strings (e.g., "likes 10" -> 10) and convert to Numbers
+      const actualLikes = likesStrings.map((text) =>
+        Number(text.replace(/\D/g, "")),
+      );
+
+      // 6. Assertion: Validate the descending order
+      // A professional approach checks if every element is >= the next one
+      for (let i = 0; i < actualLikes.length - 1; i++) {
+        expect(actualLikes[i]).toBeGreaterThanOrEqual(actualLikes[i + 1]);
+      }
+
+      // Double check: Compare against a manually sorted copy
+      const expectedSortedOrder = [...actualLikes].sort((a, b) => b - a);
+      expect(actualLikes).toEqual(expectedSortedOrder);
+    });
   });
 });
