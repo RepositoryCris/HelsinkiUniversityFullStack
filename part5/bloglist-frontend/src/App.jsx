@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { useParams, useNavigate, Navigate } from "react-router-dom";
 
 import blogService from "./services/blog";
 import loginService from "./services/login";
@@ -14,6 +16,8 @@ const App = () => {
   const [password, setPassword] = useState("");
 
   const [user, setUser] = useState(null);
+
+  const navigate = useNavigate();
 
   const apiBlogs = () => {
     const fetchBlogs = async () => {
@@ -77,6 +81,8 @@ const App = () => {
       setUser(user);
       setUsername("");
       setPassword("");
+
+      navigate("/");
     } catch {
       setNotification({
         message: "Wrong username or password",
@@ -90,6 +96,7 @@ const App = () => {
   const handleLogout = () => {
     window.localStorage.removeItem("loggedBlogappUser");
     setUser(null);
+    navigate("/");
   };
 
   const blogFormRef = useRef();
@@ -167,6 +174,7 @@ const App = () => {
     }
   };
 
+  /*
   if (user === null) {
     return (
       <div>
@@ -181,20 +189,67 @@ const App = () => {
       </div>
     );
   }
+  */
+
+  const padding = {
+    padding: 5,
+  };
 
   return (
-    <div>
-      <Notification notification={notification} />
-      <Blogs
-        user={user}
-        blogs={blogs}
-        handleLogout={handleLogout}
-        createBlog={handleCreateBlog}
-        blogFormRef={blogFormRef} // 3. Pass the ref down
-        handleLike={handleLike}
-        handleDelete={handleDelete}
-      />
-    </div>
+    <>
+      {/* Navigation Bar - Always visible */}
+      <div>
+        <Link style={padding} to="/">
+          blogs
+        </Link>
+
+        {user ? (
+          <button onClick={handleLogout} style={padding}>
+            logout
+          </button>
+        ) : (
+          <Link style={padding} to="/login">
+            login
+          </Link>
+        )}
+      </div>
+
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <div>
+              <Notification notification={notification} />
+              {user && <p>{`${user.username.toUpperCase()} logged in`}</p>}
+              <Blogs
+                user={user}
+                blogs={blogs}
+                handleLogout={handleLogout}
+                createBlog={handleCreateBlog}
+                blogFormRef={blogFormRef} // 3. Pass the ref down
+                handleLike={handleLike}
+                handleDelete={handleDelete}
+              />
+            </div>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <div>
+              <Notification notification={notification} />
+              <Login
+                handleLogin={handleLogin}
+                username={username}
+                handleUsernameChange={handleUsernameChange}
+                password={password}
+                handlePasswordChange={handlePasswordChange}
+              />
+            </div>
+          }
+        />
+      </Routes>
+    </>
   );
 };
 

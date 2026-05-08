@@ -12,7 +12,8 @@ const Blog = ({ blog, handleLike, handleDelete, user }) => {
   };
 
   // Only show the button if the blog was created by the current user
-  const showRemoveButton = blog.user && blog.user.username === user.username;
+  const showRemoveButton =
+    blog.user && user && blog.user.username === user.username;
 
   const removeButtonStyle = {
     backgroundColor: "dodgerblue",

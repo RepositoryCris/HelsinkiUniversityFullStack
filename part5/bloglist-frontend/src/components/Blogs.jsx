@@ -1,6 +1,6 @@
-import Blog from './Blog'
-import CreateNew from './CreateNew'
-import Togglable from './Togglable'
+import Blog from "./Blog";
+import CreateNew from "./CreateNew";
+import Togglable from "./Togglable";
 
 const Blogs = ({
   blogs,
@@ -18,13 +18,11 @@ const Blogs = ({
   });*/
 
   // In your component's return statement:
-  const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes)
+  const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
 
   return (
     <>
       <h2>Blogs</h2>
-      <p>{`${user.username.toUpperCase()} logged in`}</p>
-      <button onClick={handleLogout}>logout</button>
 
       <Togglable buttonLabel="create new blog" ref={blogFormRef}>
         <CreateNew createBlog={createBlog} />
@@ -40,7 +38,7 @@ const Blogs = ({
         />
       ))}
     </>
-  )
-}
+  );
+};
 
-export default Blogs
+export default Blogs;
