@@ -1,6 +1,7 @@
 import Blog from "./Blog";
 import CreateNew from "./CreateNew";
 import Togglable from "./Togglable";
+import { Link } from "react-router-dom";
 
 const Blogs = ({
   blogs,
@@ -11,11 +12,13 @@ const Blogs = ({
   handleLike,
   handleDelete,
 }) => {
-  /*const filterByUser = blogs.filter((blog) => {
-    if (blog.user && blog.user.username === user.username) {
-      return blog;
-    }
-  });*/
+  const blogStyle = {
+    paddingTop: 10,
+    paddingLeft: 2,
+    border: "solid",
+    borderWidth: 1,
+    marginBottom: 5,
+  };
 
   // In your component's return statement:
   const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
@@ -24,19 +27,15 @@ const Blogs = ({
     <>
       <h2>Blogs</h2>
 
-      <Togglable buttonLabel="create new blog" ref={blogFormRef}>
-        <CreateNew createBlog={createBlog} />
-      </Togglable>
-
-      {sortedBlogs.map((blog) => (
-        <Blog
-          key={blog.id}
-          blog={blog}
-          handleLike={handleLike}
-          user={user}
-          handleDelete={handleDelete}
-        />
-      ))}
+      <ul>
+        {sortedBlogs.map((blog) => (
+          <li key={blog.id} style={blogStyle}>
+            <Link to={`/blogs/${blog.id}`}>
+              {blog.title} by {blog.author}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </>
   );
 };

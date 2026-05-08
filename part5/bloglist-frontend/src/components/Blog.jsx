@@ -1,7 +1,17 @@
-import { useState } from "react";
+import { useParams } from "react-router-dom";
 
-const Blog = ({ blog, handleLike, handleDelete, user }) => {
-  const [visible, setVisible] = useState(false);
+const Blog = ({ blogs, handleLike, handleDelete, user }) => {
+  const { id } = useParams();
+  // 1. Guard clause: Wait for the blogs array to exist
+  if (!blogs || blogs.length === 0) return null;
+
+  // 2. Find the specific blog
+  const blog = blogs.find((b) => b.id === id);
+
+  // 3. Guard clause: If the ID in the URL doesn't match any blog
+  if (!blog) {
+    return <p>Blog not found</p>;
+  }
 
   const blogStyle = {
     paddingTop: 10,
@@ -24,35 +34,29 @@ const Blog = ({ blog, handleLike, handleDelete, user }) => {
     marginTop: "5px",
   };
 
-  const toggleVisibility = () => {
-    setVisible(!visible);
-  };
-
   return (
     <div style={blogStyle} className="blog">
+      <h2>
+        {blog.author}: {blog.title}
+      </h2>
+
       <div>
-        {blog.title} {blog.author}
-        <button onClick={toggleVisibility}>{visible ? "hide" : "view"}</button>
+        <a href={blog.url} target="_blank" rel="noreferrer">
+          {blog.url}
+        </a>
       </div>
 
-      {visible && (
-        <div>
-          <div>{blog.url}</div>
-          <div>
-            likes {blog.likes}{" "}
-            <button onClick={() => handleLike(blog)}>like</button>
-          </div>
-          <p>{blog.user?.name}</p>
+      <div>
+        likes {blog.likes}
+        {/* REQUIREMENT: Only show Like button if user is logged in */}
+        {user && <button onClick={() => handleLike(blog)}>like</button>}
+      </div>
+      <p>Added by {blog.user?.name || blog.author}</p>
 
-          {showRemoveButton && (
-            <button
-              style={removeButtonStyle}
-              onClick={() => handleDelete(blog)}
-            >
-              remove
-            </button>
-          )}
-        </div>
+      {showRemoveButton && (
+        <button style={removeButtonStyle} onClick={() => handleDelete(blog)}>
+          remove
+        </button>
       )}
     </div>
   );

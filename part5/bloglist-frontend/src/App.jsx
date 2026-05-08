@@ -7,6 +7,7 @@ import loginService from "./services/login";
 import Login from "./components/Login";
 import Blogs from "./components/Blogs";
 import Notification from "./components/Notification";
+import Blog from "./components/Blog";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
@@ -174,23 +175,6 @@ const App = () => {
     }
   };
 
-  /*
-  if (user === null) {
-    return (
-      <div>
-        <Notification notification={notification} />
-        <Login
-          handleLogin={handleLogin}
-          username={username}
-          handleUsernameChange={handleUsernameChange}
-          password={password}
-          handlePasswordChange={handlePasswordChange}
-        />
-      </div>
-    );
-  }
-  */
-
   const padding = {
     padding: 5,
   };
@@ -216,20 +200,24 @@ const App = () => {
 
       <Routes>
         <Route
+          path="/blogs/:id"
+          element={
+            <Blog
+              blogs={blogs}
+              handleLike={handleLike}
+              user={user}
+              handleDelete={handleDelete}
+            />
+          }
+        />
+
+        <Route
           path="/"
           element={
             <div>
               <Notification notification={notification} />
               {user && <p>{`${user.username.toUpperCase()} logged in`}</p>}
-              <Blogs
-                user={user}
-                blogs={blogs}
-                handleLogout={handleLogout}
-                createBlog={handleCreateBlog}
-                blogFormRef={blogFormRef} // 3. Pass the ref down
-                handleLike={handleLike}
-                handleDelete={handleDelete}
-              />
+              <Blogs blogs={blogs} />
             </div>
           }
         />
