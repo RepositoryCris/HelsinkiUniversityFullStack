@@ -1,7 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Blog from "./Blog";
 import CreateNew from "./CreateNew";
+
+import { MemoryRouter, Routes, Route } from "react-router-dom";
+
 // screen.debug(); method debug that can be used to print the HTML of a component to the terminal
 // screen.debug(element);
 // mockHandler.mockClear(); you can put this in the beforeEach
@@ -9,8 +12,7 @@ const id = "69c5ee76cbb024ab24fdfdd9";
 const mockHandlerLike = vi.fn();
 const mockHandlerDelete = vi.fn();
 
-describe("<Blog />", () => {
-  let container;
+describe("<Blog /> - Legacy Functional Tests", () => {
   const blog = {
     title: "Practicing react ",
     author: "Cristian",
@@ -25,126 +27,61 @@ describe("<Blog />", () => {
   };
   const user = { username: "root", name: "Superuser" };
 
-  beforeEach(() => {
-    container = render(
-      <Blog
-        key={id}
-        blog={blog}
-        user={user}
-        handleLike={mockHandlerLike}
-        handleDelete={mockHandlerDelete}
-      />,
-    ).container;
-  });
-
-  test("Renders content", () => {
-    const title = screen.getByText("Practicing react ", { exact: false });
-    expect(title).toBeDefined();
-
-    const author = screen.getByText("Cristian", { exact: false });
-    expect(author).toBeDefined();
-  });
-
-  test("Renders content using CSS selector", () => {
-    const div = container.querySelector(".blog");
-    expect(div).toHaveTextContent("Practicing react ");
-
-    const div2 = container.querySelector(".blog");
-    expect(div2).toHaveTextContent("Cristian");
-  });
-
-  test("Does not render content", () => {
-    const url = screen.queryByText(
-      "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
-      { exact: false },
+  // Helper to maintain consistency
+  const renderBlog = (userData = user) => {
+    return render(
+      <MemoryRouter initialEntries={[`/blogs/${blog.id}`]}>
+        <Routes>
+          <Route
+            path="/blogs/:id"
+            element={
+              <Blog
+                blogs={[blog]} // Fix: Pass array for guard clause
+                user={userData}
+                handleLike={mockHandlerLike}
+                handleDelete={mockHandlerDelete}
+              />
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
     );
-    expect(url).toBeNull();
+  };
 
-    const likes = screen.queryByText(0, { exact: false });
-    expect(likes).toBeNull();
+  test("Renders content correctly", () => {
+    renderBlog();
+    // Use regex to be more flexible with formatting
+    expect(screen.getByText(/Cristian/i)).toBeDefined();
+    expect(screen.getByText(/Practicing react/i)).toBeDefined();
   });
 
-  test("clicking the button view permit to show the url, likes and name", async () => {
-    const user = userEvent.setup();
+  test("Shows URL and likes when a user is logged in", () => {
+    renderBlog();
 
-    const viewButton = screen.getByText("view");
-    await user.click(viewButton);
+    const url = screen.getByText(blog.url);
+    const likes = screen.getByText(/likes 5/i);
 
-    const url = screen.getByText(
-      "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
-    );
     expect(url).toBeVisible();
-
-    const likes = screen.getByText("likes 5");
     expect(likes).toBeVisible();
-
-    const name = screen.getByText("Superuser");
-    expect(name).toBeVisible();
-  });
-
-  test("clicking the button view permit to show content then click hide button to hide content", async () => {
-    const user = userEvent.setup();
-
-    const viewButton = screen.getByText("view");
-    await user.click(viewButton);
-
-    const url = screen.getByText(
-      "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
-    );
-    expect(url).toBeVisible();
-
-    const likes = screen.getByText("likes 5");
-    expect(likes).toBeVisible();
-
-    const name = screen.getByText("Superuser");
-    expect(name).toBeVisible();
-
-    const hideButton = screen.getByText("hide");
-    await user.click(hideButton);
-
-    // Use queryByText because the element url, likes and name are removed from the DOM
-    const noUrl = screen.queryByText(
-      "https://fullstackopen.com/en/part5/login_in_frontend#exercises-5-1-5-4",
-    );
-    expect(noUrl).toBeNull();
-
-    const noLikes = screen.queryByText("likes 5");
-    expect(noLikes).toBeNull();
-
-    const noName = screen.queryByText("Superuser");
-    expect(noName).toBeNull();
-
-    const visibleView = screen.getByText("view");
-    expect(visibleView).toBeVisible();
   });
 
   test("clicking the like button twice calls the event handler twice", async () => {
-    const user = userEvent.setup();
+    const session = userEvent.setup();
+    renderBlog();
 
-    // Reveal the hidden part of the blog
-    const viewButton = screen.getByText("view");
-    await user.click(viewButton);
-
-    // Find the like button
     const likeButton = screen.getByText("like");
+    await session.click(likeButton);
+    await session.click(likeButton);
 
-    // Click it twice
-    await user.click(likeButton);
-    await user.click(likeButton);
-
-    // Requirement: Check that the handler was called exactly twice
-    expect(mockHandlerLike.mock.calls).toHaveLength(2);
-
-    // Note: We remove the "likes 7" check because the mock handler
-    // does not actually update the component's props in this test environment.
+    expect(mockHandlerLike).toHaveBeenCalledTimes(2);
   });
 
   test("clicking the remove button calls the handler once", async () => {
-    const user = userEvent.setup();
-    await user.click(screen.getByText("view"));
+    const session = userEvent.setup();
+    renderBlog();
 
     const removeButton = screen.getByText("remove");
-    await user.click(removeButton);
+    await session.click(removeButton);
 
     expect(mockHandlerDelete).toHaveBeenCalledTimes(1);
   });
@@ -246,5 +183,72 @@ describe("<CreateNew />", () => {
     expect(consoleSpy).toHaveBeenCalled();
 
     consoleSpy.mockRestore();
+  });
+});
+
+describe("<Blog/> - Authorization & Routing (Refactored)", () => {
+  // The "State Seed": A blog created by 'helsinki'
+  const blog = {
+    id: "69c43f11b35555ca35f42a92",
+    title: "Canonical string reduction",
+    author: "Edsger W. Dijkstra",
+    url: "http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
+    likes: 19,
+    user: {
+      username: "helsinki",
+      name: "helsinki user",
+    },
+  };
+
+  // Professional QA Approach: Reusable render function with "Login" injection
+  const setupEnv = (loggedInUser = null) => {
+    const urlPath = `/blogs/${blog.id}`;
+
+    render(
+      <MemoryRouter initialEntries={[urlPath]}>
+        <Routes>
+          <Route
+            path="/blogs/:id"
+            element={
+              <Blog
+                blogs={[blog]} // Pass as array to bypass your component's guard clause
+                user={loggedInUser} // This simulates the "Login" state
+                handleLike={mockHandlerLike}
+                handleDelete={mockHandlerDelete}
+              />
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+  };
+
+  test("Requirement 1: Unauthenticated user sees info but NO buttons", () => {
+    setupEnv(null); // No one is logged in
+
+    expect(screen.getByText(new RegExp(blog.url, "i"))).toBeVisible();
+    expect(screen.getByText(/likes 19/i)).toBeVisible();
+
+    // Guard check: ensure no interaction buttons exist
+    expect(screen.queryByText("like")).toBeNull();
+    expect(screen.queryByText("remove")).toBeNull();
+  });
+
+  test("Requirement 2: Non-creator sees ONLY the like button", () => {
+    const intruder = { username: "other_user", name: "Stranger" };
+    setupEnv(intruder); // "Login" as someone else
+
+    expect(screen.getByText("like")).toBeVisible();
+
+    // Logic check: They shouldn't be able to delete helsinki's blog
+    expect(screen.queryByText("remove")).toBeNull();
+  });
+
+  test("Requirement 3: Creator sees BOTH like and delete buttons", () => {
+    const creator = { username: "helsinki", name: "helsinki user" };
+    setupEnv(creator); // "Login" as the owner
+
+    expect(screen.getByText("like")).toBeVisible();
+    expect(screen.getByText("remove")).toBeVisible();
   });
 });
