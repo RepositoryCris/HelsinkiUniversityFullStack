@@ -8,6 +8,7 @@ import Login from "./components/Login";
 import Blogs from "./components/Blogs";
 import Notification from "./components/Notification";
 import Blog from "./components/Blog";
+import CreateNew from "./components/CreateNew";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
@@ -115,12 +116,13 @@ const App = () => {
         },
       };
       setBlogs(blogs.concat(blogWithFullUser));
-      blogFormRef.current.toggleVisibility();
 
       setNotification({
         message: `A new blog ${returnedBlog.title.toUpperCase()} by ${returnedBlog.author.toUpperCase()} added`,
         type: "success",
       });
+
+      navigate("/");
 
       return returnedBlog;
     } catch (error) {
@@ -166,6 +168,8 @@ const App = () => {
           message: `Deleted ${blog.title} by ${blog.author}`,
           type: "success",
         });
+
+        navigate("/");
       } catch (error) {
         setNotification({
           message: `Error deleting blog: ${error.message}`,
@@ -181,11 +185,16 @@ const App = () => {
 
   return (
     <>
-      {/* Navigation Bar - Always visible */}
-      <div>
+      <nav>
         <Link style={padding} to="/">
           blogs
         </Link>
+
+        {user && (
+          <Link style={padding} to="/create">
+            new blog
+          </Link>
+        )}
 
         {user ? (
           <button onClick={handleLogout} style={padding}>
@@ -196,7 +205,7 @@ const App = () => {
             login
           </Link>
         )}
-      </div>
+      </nav>
 
       <Routes>
         <Route
@@ -221,6 +230,18 @@ const App = () => {
             </div>
           }
         />
+
+        <Route
+          path="/create"
+          element={
+            user ? (
+              <CreateNew createBlog={handleCreateBlog} />
+            ) : (
+              <Navigate replace to="/login" />
+            )
+          }
+        />
+
         <Route
           path="/login"
           element={
