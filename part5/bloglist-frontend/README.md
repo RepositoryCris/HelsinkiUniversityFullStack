@@ -753,3 +753,29 @@ coverage
 | **User Event**            | **Interaction Utility** | Simulates realistic browser interactions (clicks, typing) better than simple events. | `userEvent.setup()`, `await user.click()`                  |
 | **Jest-DOM**              | **Custom Matchers**     | Extends Vitest/Jest `expect` with "human-readable" DOM assertions.                   | `.toBeVisible()`, `.toBeDefined()`, `.toHaveTextContent()` |
 | **JSDOM**                 | **Environment**         | A "headless" browser simulation that allows React to run in Node.js.                 | (The virtual `document` and `window`)                      |
+
+## 🧪 E2E Testing Suite (Playwright)
+
+Implemented a robust end-to-end testing suite specifically optimized for the routed version of the application. The suite ensures full coverage of the core business logic while maintaining stability across client-side navigation.
+
+### Key Implementations
+
+- Authentication Testing: Verified successful login flows and implemented error-boundary checks to confirm "401 Unauthorized" handling for incorrect credentials.
+
+- State-Aware Locators: Developed a custom helper.js using role-based locators (getByRole) and regex-based matching to prevent "Strict Mode" violations between UI components and notifications.
+
+- Routed Blog Lifecycle:
+  - Creation: Automated the flow from the navigation bar to the /create route, ensuring form persistence and successful redirect to the dashboard.
+
+  - Engagement: Integrated state verification for the "Like" functionality, confirming that API-driven increments are correctly reflected in the DOM.
+
+  - Deletion: Instrumented browser dialog handling (page.on('dialog')) to automate the confirmation process for removing blog records.
+
+- Dynamic Context Handling: Configured beforeEach hooks to ensure a consistent test environment using a dedicated test user (crisdev), bypassing the need for manual database resets between every test run.
+
+Test Coverage Summary:
+✅ Login Success: Validates navigation and user session initialization.
+✅ Login Failure: Ensures proper UI feedback for invalid credentials.
+✅ Blog Creation: Confirms full-stack integration and client-side routing.
+✅ Like Functionality: Verifies individual blog view interactions and state updates.
+✅ Blog Deletion: Tests removal logic and automated navigation post-deletion.

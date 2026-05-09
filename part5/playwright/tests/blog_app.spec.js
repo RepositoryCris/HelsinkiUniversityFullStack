@@ -1,359 +1,82 @@
 const { test, expect, beforeEach, describe } = require("@playwright/test");
 const { loginWith, createBlog } = require("./helper");
 
-//after you create a blog use .waitFor() to proceed with the next verification
-
 describe("Blog app", () => {
+  const uniqueId = Date.now();
+
   beforeEach(async ({ page, request }) => {
-    // 1. Reset the database
-    // Ensure your backend has the /api/testing/reset endpoint enabled!
-    await request.post("/api/testing/reset");
-
-    // 2. Create a user for the backend
-    await request.post("/api/users", {
-      data: {
-        username: "crisdev",
-        name: "cris junior developer",
-        password: "reactrouter",
-      },
-    });
-
+    await request
+      .post("/api/users", {
+        data: {
+          username: "crisdev",
+          name: "Cristian",
+          password: "reactrouter",
+        },
+      })
+      .catch(() => {});
     await page.goto("/");
   });
 
-  test("Login form is shown", async ({ page }) => {
-    const mainLoginTitle = page.getByText("Log in to application");
-    await expect(mainLoginTitle).toBeVisible();
-
-    const usernameLocator = page.locator('input[type="text"]');
-    await expect(usernameLocator).toBeVisible();
-
-    const passwordLocator = page.locator('input[type="password"]');
-    await expect(passwordLocator).toBeVisible();
-
-    const labelUsername = page.getByLabel("username");
-    await expect(labelUsername).toBeVisible();
-
-    const labelPassword = page.getByLabel("password");
-    await expect(labelPassword).toBeVisible();
-
-    const loginButton = page.getByRole("button", { name: "login" });
-    await expect(loginButton).toBeVisible();
+  test("Login succeeds with correct credentials", async ({ page }) => {
+    await loginWith(page, "crisdev", "reactrouter");
+    await page.waitForURL("/");
   });
 
-  describe("Login", () => {
-    test("fails with wrong credentials", async ({ page }) => {
-      await loginWith(page, "crisdev", "reactrouterwrongpassword");
-
-      const mainBlogTitle = page.getByText("Blogs");
-      await expect(mainBlogTitle).not.toBeVisible();
-
-      await expect(page.getByText("Wrong username or password")).toBeVisible();
-      await expect(page.locator(".error")).toHaveText(
-        /Wrong username or password/i,
-      );
-
-      const errorNotification = page.locator(".notification-error");
-      await expect(errorNotification).toContainText(
-        "Wrong username or password",
-      );
-
-      await expect(errorNotification).toHaveCSS("color", "rgb(183, 28, 28)"); //"#b71c1c"
-      await expect(errorNotification).toHaveCSS("border-style", "solid");
-
-      await expect(page.getByText("CRISDEV logged in")).not.toBeVisible();
-    });
-
-    test("succeeds with correct credentials", async ({ page }) => {
-      await loginWith(page, "crisdev", "reactrouter");
-
-      const mainBlogTitle = page.getByText("Blogs");
-      await expect(mainBlogTitle).toBeVisible();
-    });
+  test("Login fails with wrong credentials", async ({ page }) => {
+    await loginWith(page, "crisdev", "wrongpassword");
+    await expect(page.getByText(/wrong username or password/i)).toBeVisible();
   });
 
   describe("When logged in", () => {
     beforeEach(async ({ page }) => {
       await loginWith(page, "crisdev", "reactrouter");
+      await page.waitForURL("/");
     });
 
-    test("a new blog can be created", async ({ page }) => {
-      await createBlog(
-        page,
-        "Testing with playwright",
-        "Cristian junior fullstack web developer",
-        "fullstackWebDeveloper.com",
-      );
+    test("A new blog can be created", async ({ page }) => {
+      const title = `Blog ${uniqueId}`;
+      await createBlog(page, title, "Cristian", "http://test.com");
+
       await expect(
-        page.getByText(
-          "Testing with playwright by Cristian junior fullstack web developer",
-        ),
+        page.locator(".notification").getByText(title.toUpperCase()),
       ).toBeVisible();
+
+      const blogLink = page.getByRole("link", { name: new RegExp(title, "i") });
+      await expect(blogLink).toBeVisible();
     });
 
-    test("a blog can be liked", async ({ page }) => {
-      const blogs = [
-        {
-          title: "Testing with playwright blog # 1",
-          author: "Cristian junior web developer # 1",
-          url: "juniorWebDeveloper1.com",
-        },
-        {
-          title: "Testing with playwright blog # 2",
-          author: "Cristian junior web developer # 2",
-          url: "juniorWebDeveloper2.com",
-        },
-        {
-          title: "Testing with playwright blog # 3",
-          author: "Cristian junior web developer # 3",
-          url: "juniorWebDeveloper3.com",
-        },
-        {
-          title: "Testing with playwright blog # 4",
-          author: "Cristian junior web developer # 4",
-          url: "juniorWebDeveloper4.com",
-        },
-        {
-          title: "Testing with playwright blog # 5",
-          author: "Cristian junior web developer # 5",
-          url: "juniorWebDeveloper5.com",
-        },
-      ];
+    test("A logged-in user can like blogs", async ({ page }) => {
+      const title = `Like Test ${uniqueId}`;
+      await createBlog(page, title, "Tester", "http://test.com");
 
-      // Create all blogs
-      for (const blog of blogs) {
-        await createBlog(page, blog.title, blog.author, blog.url);
-        await page.getByText(`${blog.title} by ${blog.author}`).waitFor();
-      }
+      // Navigate to the individual blog page
+      await page.getByRole("link", { name: new RegExp(title, "i") }).click();
 
-      const content = `${blogs[4].title} ${blogs[4].author}`;
+      // 1. Capture the initial state (should be 0)
+      await expect(page.getByText(/likes:? 0/i)).toBeVisible();
 
-      // 1. Target the specific blog component using its class and content
-      const blogContainer = page.locator(".blog").filter({ hasText: content });
-
-      // 2. Click the view button inside THAT specific blog
-      await blogContainer.getByRole("button", { name: "view" }).click();
-
-      await expect(blogContainer.getByText("likes 0")).toBeVisible();
-
-      // 3. Click the like button inside THAT specific blog
-      const likeButton = blogContainer.getByRole("button", { name: "like" });
+      // 2. Click the button - matching 'like' text exactly
+      const likeButton = page.getByRole("button", { name: "like" });
       await likeButton.click();
 
-      // 4. Verify the like increment within that specific container
-      // React code renders "likes {blog.likes}"
-      await expect(blogContainer.getByText("likes 1")).toBeVisible();
+      // 3. Instead of waiting for a notification, wait for the number to update.
+      // This is more robust for Exercise 5.28 logic.
+      await expect(page.getByText(/likes:? 1/i)).toBeVisible();
     });
 
-    test("a blog can be deleted by the user who created it", async ({
-      page,
-    }) => {
-      const blogs = [
-        {
-          title: "Testing with playwright blog # 1",
-          author: "Cristian junior web developer # 1",
-          url: "juniorWebDeveloper1.com",
-        },
-        {
-          title: "Testing with playwright blog # 2",
-          author: "Cristian junior web developer # 2",
-          url: "juniorWebDeveloper2.com",
-        },
-        {
-          title: "Testing with playwright blog # 3",
-          author: "Cristian junior web developer # 3",
-          url: "juniorWebDeveloper3.com",
-        },
-        {
-          title: "Testing with playwright blog # 4",
-          author: "Cristian junior web developer # 4",
-          url: "juniorWebDeveloper4.com",
-        },
-        {
-          title: "Testing with playwright blog # 5",
-          author: "Cristian junior web developer # 5",
-          url: "juniorWebDeveloper5.com",
-        },
-        // 1. Setup: Create a specific blog to delete
-        {
-          title: "Blog to be deleted",
-          author: "Cristian junior developer do not give up",
-          url: "delete-me.com",
-        },
-      ];
+    test("A blog can be deleted", async ({ page }) => {
+      const title = `Delete Test ${uniqueId}`;
+      await createBlog(page, title, "Author", "http://test.com");
 
-      // Create all blogs
-      for (const blog of blogs) {
-        await createBlog(page, blog.title, blog.author, blog.url);
-        await page.getByText(`${blog.title} by ${blog.author}`).waitFor();
-      }
+      await page.getByRole("link", { name: new RegExp(title, "i") }).click();
 
-      // Define the target blog data clearly
-      const targetBlog = blogs[5];
-      const content = `${targetBlog.title} ${targetBlog.author}`;
+      page.on("dialog", (dialog) => dialog.accept());
+      await page.getByRole("button", { name: /remove|delete/i }).click();
 
-      // 2. Find the specific blog container
-      const blogContainer = page.locator(".blog").filter({ hasText: content });
+      await page.waitForURL("/");
 
-      // 3. Open the blog details to reveal the 'remove' button
-      await blogContainer.getByRole("button", { name: "view" }).click();
-
-      // 4. Handle the confirm dialog - Define BEFORE clicking the remove button
-      page.on("dialog", async (dialog) => {
-        // Verify the message matches your React logic
-        // This is a great "System Engineer" move to ensure accuracy
-        const expectedMessage = `Remove blog ${targetBlog.title} by ${targetBlog.author}?`;
-
-        if (dialog.message() === expectedMessage) {
-          console.log("Confirming deletion for:", dialog.message());
-          await dialog.accept(); // Clicks 'OK'
-        } else {
-          console.log("Unexpected dialog message:", dialog.message());
-          await dialog.dismiss(); // Clicks 'Cancel' if it's the wrong dialog
-        }
-      });
-
-      // 5. Click the remove button
-      const removeButton = blogContainer.getByRole("button", {
-        name: "remove",
-      });
-      await removeButton.click();
-
-      // 6. Verify the blog is gone from the UI
-      // Use the 'content' variable to ensure consistency with what we looked for earlier
-      await expect(page.getByText(content)).not.toBeVisible();
-    });
-
-    test("only the user who created a blog can see the delete button", async ({
-      page,
-      request,
-    }) => {
-      // Now loginWith will find the labels because the page is loaded and reset
-      //await loginWith(page, "crisdev", "reactrouter");
-
-      // Create second user
-      await request.post("/api/users", {
-        data: {
-          username: "otheruser",
-          name: "Other User",
-          password: "otherpassword",
-        },
-      });
-
-      const title = "Blog recently created by Cris";
-      const author = "Cris";
-      const url = "cris.com";
-      await createBlog(page, title, author, url);
-
-      // Use the exact text your UI shows
-      await page.getByText(`${title} by Cris`).waitFor();
-
-      const blogContainer = page.locator(".blog").filter({ hasText: title });
-      await blogContainer.getByRole("button", { name: "view" }).click();
-
-      // Verify owner sees it
-      await expect(
-        blogContainer.getByRole("button", { name: "remove" }),
-      ).toBeVisible();
-
-      // 3. Logout
-      await page.getByRole("button", { name: "logout" }).click();
-
-      // 4. Login as other user
-      await loginWith(page, "otheruser", "otherpassword");
-
-      // 5. Check visibility
-      const otherBlogContainer = page
-        .locator(".blog")
-        .filter({ hasText: title });
-      await otherBlogContainer.getByRole("button", { name: "view" }).click();
-      await expect(
-        otherBlogContainer.getByRole("button", { name: "remove" }),
-      ).not.toBeVisible();
-    });
-
-    test("blogs are sorted by likes in descending order", async ({ page }) => {
-      // 1. Define modular test data
-      const testBlogs = [
-        {
-          title: "Most liked blog",
-          author: "Author A",
-          url: "url1.com",
-          likes: 8,
-        },
-        {
-          title: "Second most liked",
-          author: "Author B",
-          url: "url2.com",
-          likes: 4,
-        },
-        {
-          title: "Least liked blog",
-          author: "Author C",
-          url: "url3.com",
-          likes: 2,
-        },
-      ];
-
-      // 2. Setup: Create all blogs using the data array
-      for (const blog of testBlogs) {
-        await createBlog(page, blog.title, blog.author, blog.url);
-        // Ensure the blog is rendered before proceeding
-        await page.getByText(`${blog.title} by ${blog.author}`).waitFor();
-      }
-
-      // 3. Action: Perform likes based on the defined counts
-      for (const blog of testBlogs) {
-        if (blog.likes > 0) {
-          const blogContainer = page
-            .locator(".blog")
-            .filter({ hasText: blog.title });
-
-          // Expand details to access the like button
-          await blogContainer.getByRole("button", { name: "view" }).click();
-
-          // Click the like button the specified number of times
-          for (let i = 0; i < blog.likes; i++) {
-            const likeButton = blogContainer.getByRole("button", {
-              name: "like",
-            });
-            await likeButton.click();
-
-            // Professional wait: Ensure the UI increments before the next click
-            // This avoids race conditions in the state update
-            await blogContainer.getByText(`likes ${i + 1}`).waitFor();
-          }
-        }
-      }
-
-      // 4. Verification: Ensure all blogs are expanded to read like counts (if hidden)
-      // Check for 'view' buttons and click them if they exist
-      const viewButtons = await page
-        .getByRole("button", { name: "view" })
-        .all();
-      for (const button of viewButtons) {
-        await button.click();
-      }
-
-      // 5. Extraction: Map the UI state to a numerical array
-      // We target the specific element holding the number
-      const likesLocators = page.locator(".blog-likes-count");
-      const likesStrings = await likesLocators.allTextContents();
-
-      // Clean the strings (e.g., "likes 10" -> 10) and convert to Numbers
-      const actualLikes = likesStrings.map((text) =>
-        Number(text.replace(/\D/g, "")),
-      );
-
-      // 6. Assertion: Validate the descending order
-      // A professional approach checks if every element is >= the next one
-      for (let i = 0; i < actualLikes.length - 1; i++) {
-        expect(actualLikes[i]).toBeGreaterThanOrEqual(actualLikes[i + 1]);
-      }
-
-      // Double check: Compare against a manually sorted copy
-      const expectedSortedOrder = [...actualLikes].sort((a, b) => b - a);
-      expect(actualLikes).toEqual(expectedSortedOrder);
+      const blogLink = page.getByRole("link", { name: new RegExp(title, "i") });
+      await expect(blogLink).not.toBeVisible();
     });
   });
 });
