@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TextField, Button, Box } from "@mui/material";
 
 const CreateNew = ({ createBlog }) => {
   const [title, setTitle] = useState("");
@@ -31,45 +32,40 @@ const CreateNew = ({ createBlog }) => {
   };
 
   return (
-    <>
-      <h2>Create new</h2>
-      <form onSubmit={addBlog}>
-        <div>
-          <label>
-            title:
-            <input
-              type="text"
-              value={title}
-              name="title"
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            author:
-            <input
-              type="text"
-              value={author}
-              name="author"
-              onChange={(e) => setAuthor(e.target.value)}
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            url:
-            <input
-              type="text"
-              value={url}
-              name="url"
-              onChange={(e) => setUrl(e.target.value)}
-            />
-          </label>
-        </div>
-        <button type="submit">Create</button>
-      </form>
-    </>
+    <Box component="form" onSubmit={addBlog} sx={{ maxWidth: 400 }}>
+      <h2>Create new blog</h2>
+      <TextField
+        fullWidth
+        label="Title:"
+        name="title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+        margin="normal"
+      />
+      <TextField
+        fullWidth
+        label="Author:"
+        name="author"
+        value={author}
+        onChange={(e) => setAuthor(e.target.value)}
+        required
+        margin="normal"
+      />
+      <TextField
+        fullWidth
+        label="Url:"
+        name="url"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        required
+        margin="normal"
+      />
+
+      <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+        Create
+      </Button>
+    </Box>
   );
 };
 export default CreateNew;

@@ -2,6 +2,15 @@ import Blog from "./Blog";
 import CreateNew from "./CreateNew";
 import Togglable from "./Togglable";
 import { Link } from "react-router-dom";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from "@mui/material";
 
 const Blogs = ({
   blogs,
@@ -27,15 +36,26 @@ const Blogs = ({
     <>
       <h2>Blogs</h2>
 
-      <ul>
-        {sortedBlogs.map((blog) => (
-          <li key={blog.id} style={blogStyle}>
-            <Link to={`/blogs/${blog.id}`}>
-              {blog.title} by {blog.author}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Title</TableCell>
+              <TableCell>Autor</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sortedBlogs.map((blog) => (
+              <TableRow key={blog.id}>
+                <TableCell>
+                  <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
+                </TableCell>
+                <TableCell>{blog.author}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </>
   );
 };

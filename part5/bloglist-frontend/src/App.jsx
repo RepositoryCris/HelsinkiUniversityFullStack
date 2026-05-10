@@ -9,13 +9,11 @@ import Blogs from "./components/Blogs";
 import Notification from "./components/Notification";
 import Blog from "./components/Blog";
 import CreateNew from "./components/CreateNew";
+import { Container } from "@mui/material";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
   const [notification, setNotification] = useState(null);
-
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
 
   const [user, setUser] = useState(null);
 
@@ -64,16 +62,7 @@ const App = () => {
     }
   }, [notification]);
 
-  const handleUsernameChange = ({ target }) => {
-    setUsername(target.value);
-  };
-  const handlePasswordChange = ({ target }) => {
-    setPassword(target.value);
-  };
-
-  const handleLogin = async (event) => {
-    event.preventDefault();
-
+  const handleLogin = async ({ username, password }) => {
     try {
       const user = await loginService.login({ username, password });
 
@@ -81,9 +70,6 @@ const App = () => {
 
       blogService.setToken(user.token);
       setUser(user);
-      setUsername("");
-      setPassword("");
-
       navigate("/");
     } catch {
       setNotification({
@@ -184,7 +170,7 @@ const App = () => {
   };
 
   return (
-    <>
+    <Container>
       <nav>
         <Link style={padding} to="/">
           blogs
@@ -247,18 +233,12 @@ const App = () => {
           element={
             <div>
               <Notification notification={notification} />
-              <Login
-                handleLogin={handleLogin}
-                username={username}
-                handleUsernameChange={handleUsernameChange}
-                password={password}
-                handlePasswordChange={handlePasswordChange}
-              />
+              <Login handleLogin={handleLogin} />
             </div>
           }
         />
       </Routes>
-    </>
+    </Container>
   );
 };
 

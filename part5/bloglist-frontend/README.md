@@ -779,3 +779,116 @@ Test Coverage Summary:
 ✅ Blog Creation: Confirms full-stack integration and client-side routing.
 ✅ Like Functionality: Verifies individual blog view interactions and state updates.
 ✅ Blog Deletion: Tests removal logic and automated navigation post-deletion.
+
+## The most popular UI framework right now
+
+The React library [MaterialUI](https://mui.com/) , which implements Google’s [Material Design](https://m3.material.io/) design language.
+
+Let us install the library:
+
+```bash
+npm install @mui/material @emotion/react @emotion/styled
+```
+
+When using MaterialUI, the entire app’s content is usually rendered inside the Container component:
+
+```js
+import { Container } from "@mui/material";
+
+const App = () => {
+  // ...
+  return <Container>// ...</Container>;
+};
+```
+
+For table import:
+
+```js
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from "@mui/material";
+```
+
+Then use it like this.
+
+```js
+return (
+  <>
+    <h2>Blogs</h2>
+
+    <TableContainer>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Title</TableCell>
+            <TableCell>Autor</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {sortedBlogs.map((blog) => (
+            <TableRow key={blog.id}>
+              <TableCell>
+                <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
+              </TableCell>
+              <TableCell>{blog.author}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  </>
+);
+```
+
+For form import:
+
+```js
+import { TextField, Button, Box } from "@mui/material";
+```
+
+Then use it like this.
+
+```js
+return (
+  <Box component="form" onSubmit={addBlog} sx={{ maxWidth: 400 }}>
+    <h2>Create new blog</h2>
+    <TextField
+      fullWidth
+      label="Title:"
+      name="title"
+      value={title}
+      onChange={(e) => setTitle(e.target.value)}
+      required
+      margin="normal"
+    />
+    <TextField
+      fullWidth
+      label="Author:"
+      name="author"
+      value={author}
+      onChange={(e) => setAuthor(e.target.value)}
+      required
+      margin="normal"
+    />
+    <TextField
+      fullWidth
+      label="Url:"
+      name="url"
+      value={url}
+      onChange={(e) => setUrl(e.target.value)}
+      required
+      margin="normal"
+    />
+
+    <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+      Create
+    </Button>
+  </Box>
+);
+```
