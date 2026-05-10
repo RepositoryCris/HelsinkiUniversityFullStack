@@ -1015,3 +1015,77 @@ We utilize the MUI breakpoint system to toggle visibility between mobile and des
 - `display: { xs: 'none', md: 'flex' }`: Ensures elements only appear on screens wider than 900px.
 
 - `display: { xs: 'flex', md: 'none' }`: Ensures the mobile menu is only accessible on small devices.
+
+## Styled Components
+
+### 📌 What is Styled Components?
+
+A React library that lets you write actual CSS inside your JavaScript using ES6 tagged template literals.
+
+### 🎯 How It Works
+
+```jsx
+import styled from 'styled-components'
+
+// Create styled versions of HTML elements
+const Button = styled.button`  background: Bisque;
+  padding: 0.25em 1em;
+  border: 2px solid Chocolate;
+  border-radius: 3px;`
+
+// Use them like normal React components
+<Button>Click Me</Button>
+```
+
+| Feature              | What It Does                    |
+| -------------------- | ------------------------------- |
+| **CSS-in-JS**        | Write CSS directly in .js files |
+| **Component Styles** | Styles stay with the component  |
+| **No Class Names**   | No naming conflicts             |
+| **Dynamic Styling**  | Use props to change styles      |
+
+### 📝 Example in Practice
+
+```jsx
+// Define styled components
+const Page = styled.div`
+  padding: 1em;
+  background: papayawhip;
+`;
+
+const Navigation = styled.div`
+  background: BurlyWood;
+  padding: 1em;
+`;
+
+// Use them in your app
+const App = () => (
+  <Page>
+    <Navigation>
+      <Link to="/">home</Link>
+      <Link to="/notes">notes</Link>
+    </Navigation>
+    <Routes>...</Routes>
+  </Page>
+);
+```
+
+### 💡 Why Use It?
+
+| Pro                            | Con                                            |
+| ------------------------------ | ---------------------------------------------- |
+| ✅ No CSS files to manage      | ❌ Runtime performance cost                    |
+| ✅ Styles scoped to components | ❌ Adds to bundle size                         |
+| ✅ Dynamic styling with props  | ❌ Learning curve                              |
+| ✅ Familiar CSS syntax         | ❌ Not compatible with React Server Components |
+
+### 🚦 Status in 2026
+
+⚠️ Maintenance mode - Not recommended for new projects
+✅ Still viable for small apps
+❌ Avoid for large scale or Next.js apps
+
+### 🎯 Bottom Line
+
+Styled Components was revolutionary but has been superseded by Tailwind CSS and zero-runtime CSS-in-JS libraries.
+Good to know for legacy code, but not the first choice for new projects.

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextField, Button, Box } from "@mui/material";
+import { TextField, Button, Box, Typography, Paper } from "@mui/material";
 
 const Login = ({ handleLogin }) => {
   const [username, setUsername] = useState("");
@@ -12,26 +12,76 @@ const Login = ({ handleLogin }) => {
   };
 
   return (
-    <Box component="form" onSubmit={onSubmit} sx={{ maxWidth: 300 }}>
-      <h2>Log in to application</h2>
-      <TextField
-        fullWidth
-        label="Username"
-        value={username}
-        onChange={({ target }) => setUsername(target.value)}
-        margin="normal"
-      />
-      <TextField
-        fullWidth
-        label="Password"
-        type="password"
-        value={password}
-        onChange={({ target }) => setPassword(target.value)}
-        margin="normal"
-      />
-      <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-        Login
-      </Button>
+    /* OUTER WRAPPER: Centers the entire login card on the screen */
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "70vh", // Positions the form nicely in the upper-middle of the viewport
+        px: 2,
+      }}
+    >
+      {/* FORM CONTAINER: Paper provides the shadow and background matching your other views */}
+      <Paper
+        elevation={6}
+        sx={{
+          p: 4,
+          maxWidth: 400,
+          width: "100%",
+          borderRadius: 4,
+        }}
+      >
+        <Box component="form" onSubmit={onSubmit}>
+          <Typography
+            variant="h5"
+            sx={{
+              textAlign: "center",
+              mb: 3,
+              fontWeight: "bold",
+              color: "primary.main",
+            }}
+          >
+            Log in to application
+          </Typography>
+
+          <TextField
+            fullWidth
+            label="Username"
+            value={username}
+            onChange={({ target }) => setUsername(target.value)}
+            margin="normal"
+            variant="outlined"
+            required
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            value={password}
+            onChange={({ target }) => setPassword(target.value)}
+            margin="normal"
+            variant="outlined"
+            required
+          />
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            size="large"
+            sx={{
+              mt: 3,
+              py: 1.2,
+              borderRadius: 2,
+              fontWeight: "bold",
+              textTransform: "none",
+            }}
+          >
+            Login
+          </Button>
+        </Box>
+      </Paper>
     </Box>
   );
 };

@@ -1,64 +1,155 @@
 import { useParams } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardActions,
+  Typography,
+  Button,
+  Box,
+  Divider,
+  Chip,
+} from "@mui/material";
+
+// Standard icon imports
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import DeleteIcon from "@mui/icons-material/Delete";
+import LaunchIcon from "@mui/icons-material/Launch";
+import PersonIcon from "@mui/icons-material/Person";
 
 const Blog = ({ blogs, handleLike, handleDelete, user }) => {
   const { id } = useParams();
-  // 1. Guard clause: Wait for the blogs array to exist
+
   if (!blogs || blogs.length === 0) return null;
 
-  // 2. Find the specific blog
   const blog = blogs.find((b) => b.id === id);
 
-  // 3. Guard clause: If the ID in the URL doesn't match any blog
   if (!blog) {
-    return <p>Blog not found</p>;
+    return (
+      <Typography
+        variant="h6"
+        color="error"
+        sx={{ mt: 4, textAlign: "center" }}
+      >
+        Blog not found
+      </Typography>
+    );
   }
 
-  const blogStyle = {
-    paddingTop: 10,
-    paddingLeft: 2,
-    border: "solid",
-    borderWidth: 1,
-    marginBottom: 5,
-  };
-
-  // Only show the button if the blog was created by the current user
   const showRemoveButton =
     blog.user && user && blog.user.username === user.username;
 
-  const removeButtonStyle = {
-    backgroundColor: "dodgerblue",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    marginTop: "5px",
-  };
-
   return (
-    <div style={blogStyle} className="blog">
-      <h2>
-        {blog.author}: {blog.title}
-      </h2>
+    <Box sx={{ display: "flex", justifyContent: "center", mt: 5, px: 2 }}>
+      <Card
+        sx={{
+          maxWidth: 600,
+          width: "100%",
+          borderRadius: 3,
+          boxShadow: 6,
+        }}
+      >
+        <CardContent>
+          <Typography
+            variant="h4"
+            component="div"
+            sx={{ fontWeight: "bold", mb: 1 }}
+          >
+            {blog.title}
+          </Typography>
 
-      <div>
-        <a href={blog.url} target="_blank" rel="noreferrer">
-          {blog.url}
-        </a>
-      </div>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2, gap: 1 }}>
+            <Chip
+              icon={<PersonIcon />}
+              label={`By ${blog.author}`}
+              variant="outlined"
+              color="primary"
+              size="small"
+            />
+          </Box>
 
-      <div>
-        likes {blog.likes}
-        {/* REQUIREMENT: Only show Like button if user is logged in */}
-        {user && <button onClick={() => handleLike(blog)}>like</button>}
-      </div>
-      <p>Added by {blog.user?.name || blog.author}</p>
+          <Typography
+            variant="body1"
+            sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <strong>URL:</strong>
+            <Button
+              href={blog.url}
+              target="_blank"
+              rel="noreferrer"
+              size="small"
+              endIcon={<LaunchIcon />}
+              sx={{ textTransform: "none", p: 0, minWidth: 0 }}
+            >
+              Visit Source
+            </Button>
+          </Typography>
 
-      {showRemoveButton && (
-        <button style={removeButtonStyle} onClick={() => handleDelete(blog)}>
-          remove
-        </button>
-      )}
-    </div>
+          <Divider sx={{ my: 2 }} />
+
+          <Typography
+            variant="caption"
+            display="block"
+            sx={{ mt: 3, mb: 4, fontStyle: "italic", color: "text.secondary" }}
+          >
+            Added by {blog.user?.name || "Anonymous User"}
+          </Typography>
+
+          {/* Centered Engagement Section */}
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                bgcolor: "#f8f9fa", // Light neutral background for balance
+                py: 1.5,
+                px: 3,
+                borderRadius: 3,
+                width: "fit-content", // Grows as the number of likes increases
+                boxShadow: "inset 0px 1px 3px rgba(0,0,0,0.05)",
+              }}
+            >
+              <Typography variant="body1" sx={{ color: "text.primary" }}>
+                Likes: <strong>{blog.likes}</strong>
+              </Typography>
+
+              {user && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<FavoriteIcon sx={{ fontSize: 18 }} />}
+                  onClick={() => handleLike(blog)}
+                  color="primary" // Balanced with your Blue Nav Bar
+                  sx={{
+                    borderRadius: 5,
+                    textTransform: "lowercase",
+                    fontWeight: "bold",
+                    px: 2,
+                  }}
+                >
+                  like
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </CardContent>
+
+        {showRemoveButton && (
+          <CardActions sx={{ justifyContent: "flex-end", pb: 2, pr: 2 }}>
+            <Button
+              variant="text"
+              color="error"
+              size="small"
+              startIcon={<DeleteIcon />}
+              onClick={() => handleDelete(blog)}
+              sx={{ fontSize: "0.75rem", opacity: 0.7 }}
+            >
+              Delete Post
+            </Button>
+          </CardActions>
+        )}
+      </Card>
+    </Box>
   );
 };
 
