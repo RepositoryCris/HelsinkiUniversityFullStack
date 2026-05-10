@@ -1,6 +1,3 @@
-import Blog from "./Blog";
-import CreateNew from "./CreateNew";
-import Togglable from "./Togglable";
 import { Link } from "react-router-dom";
 import {
   Table,
@@ -10,53 +7,83 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Typography,
+  Box,
+  styled,
 } from "@mui/material";
 
-const Blogs = ({
-  blogs,
-  user,
-  handleLogout,
-  createBlog,
-  blogFormRef,
-  handleLike,
-  handleDelete,
-}) => {
-  const blogStyle = {
-    paddingTop: 10,
-    paddingLeft: 2,
-    border: "solid",
-    borderWidth: 1,
-    marginBottom: 5,
-  };
+// Custom styled Link to remove default blue underline
+const StyledLink = styled(Link)({
+  textDecoration: "none",
+  fontWeight: 500,
+  color: "#1976d2",
+  "&:hover": {
+    textDecoration: "underline",
+  },
+});
 
-  // In your component's return statement:
+const Blogs = ({ blogs }) => {
   const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
 
   return (
-    <>
-      <h2>Blogs</h2>
+    <Box sx={{ mt: 4, mb: 4 }}>
+      <Typography
+        variant="h4"
+        component="h2"
+        sx={{ mb: 3, fontWeight: "bold" }}
+      >
+        Explore Blogs
+      </Typography>
 
-      <TableContainer>
-        <Table>
-          <TableHead>
+      <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 2 }}>
+        <Table sx={{ minWidth: 650 }} aria-label="blog table">
+          <TableHead sx={{ bgcolor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Autor</TableCell>
+              <TableCell
+                sx={{ fontWeight: "bold", textTransform: "uppercase" }}
+              >
+                Title
+              </TableCell>
+              <TableCell
+                sx={{ fontWeight: "bold", textTransform: "uppercase" }}
+              >
+                Author
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{ fontWeight: "bold", textTransform: "uppercase" }}
+              >
+                Engagement
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {sortedBlogs.map((blog) => (
-              <TableRow key={blog.id}>
-                <TableCell>
-                  <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
+              <TableRow
+                key={blog.id}
+                hover // Adds a subtle background change on hover
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  <StyledLink to={`/blogs/${blog.id}`}>{blog.title}</StyledLink>
                 </TableCell>
-                <TableCell>{blog.author}</TableCell>
+                <TableCell sx={{ color: "text.secondary" }}>
+                  {blog.author}
+                </TableCell>
+                <TableCell align="right">
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: "bold", color: "success.main" }}
+                  >
+                    {blog.likes} Likes
+                  </Typography>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-    </>
+    </Box>
   );
 };
 

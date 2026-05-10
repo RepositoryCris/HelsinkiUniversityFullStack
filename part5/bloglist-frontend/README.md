@@ -801,7 +801,7 @@ const App = () => {
 };
 ```
 
-For table import:
+### Table
 
 ```js
 import {
@@ -846,7 +846,7 @@ return (
 );
 ```
 
-For form import:
+### Form
 
 ```js
 import { TextField, Button, Box } from "@mui/material";
@@ -892,3 +892,126 @@ return (
   </Box>
 );
 ```
+
+### Notifications
+
+Let’s improve the app’s notification component using MaterialUI’s Alert component:
+
+```js
+import { Alert } from "@mui/material";
+
+const Notification = ({ notification }) => {
+  if (notification === null) {
+    return null;
+  }
+
+  return (
+    <Alert
+      style={{ marginTop: 10, marginBottom: 10 }}
+      severity={notification.type}
+    >
+      {notification.text}
+    </Alert>
+  );
+};
+
+export default Notification;
+```
+
+Use it in the App
+
+```js
+const App = () => {
+   // ...
+  const [notification, setNotification] = useState(null)
+
+  // wherever you want to use it
+  setNotification({ text: `Note '${returnedNote.content}' added!`, type: 'success' })
+
+   return (
+    <Container>
+      <div>
+        <Link></Link>
+      </div>
+
+      <Notification notification={notification} />
+
+      <Routes>
+        <Route />
+        <Route />
+        <Route />
+        <Route />
+    </Container>
+  )
+}
+```
+
+Severity
+
+The severity prop accepts four values representing different states `success` (the default), `info`, `warning`, and `error` with corresponding icon and color combinations for each:
+
+| Severity  | Example                                                      | Use Case              |
+| --------- | ------------------------------------------------------------ | --------------------- |
+| `success` | `<Alert severity="success">This is a success Alert.</Alert>` | Successful operations |
+| `info`    | `<Alert severity="info">This is an info Alert.</Alert>`      | General information   |
+| `warning` | `<Alert severity="warning">This is a warning Alert.</Alert>` | Cautionary messages   |
+| `error`   | `<Alert severity="error">This is an error Alert.</Alert>`    | Error states          |
+
+You will have a result similar to this:
+
+<!-- markdownlint-disable MD028 -->
+
+> [!SUCCESS]
+> This is an info Alert.
+
+> [!TIP]
+> This is a success Alert.
+
+> [!WARNING]
+> This is a warning Alert.
+
+> [!IMPORTANT]
+> This is an error Alert.
+
+> [!NOTE]
+> This is an info Alert.
+
+<!-- markdownlint-enable MD028 -->
+
+### Navigation Menu
+
+Material UI Icons is a separate package from the core Material UI, we have to install it
+
+```bash
+npm install @mui/icons-material
+```
+
+The navigation bar was built as a responsive, decoupled component using Material UI (MUI) and React Router. It serves as the primary interface for user authentication and application routing.
+
+**Dynamic Routing:** Integrated with react-router-dom using the component={Link} pattern to maintain Single Page Application (SPA) performance without full-page reloads.
+
+**Conditional Rendering:** The UI automatically adapts based on the user state passed from the App component, toggling visibility for "New Blog" and "Logout" actions.
+
+**Responsive Layout Engine:**
+
+- **Desktop:** Horizontal layout with actions aligned to the right using flex-grow spacers.
+- **Mobile:** Transformation into a "Hamburger" menu utilizing MUI's Menu and MenuItem components for optimized touch interaction.
+
+**Zero-Footprint Styling:** Used the MUI sx prop for low-level utility styling, ensuring high performance and theme consistency.
+
+### Component Structure
+
+The Navigation.jsx component is designed as a stateless functional component (mostly), receiving its data through props to ensure a unidirectional data flow.
+
+| Prop         | Type     | Description                                                    |
+| ------------ | -------- | -------------------------------------------------------------- |
+| user         | Object   | The currently logged-in user object (null if unauthenticated). |
+| handleLogout | Function | Callback to clear local storage and reset application state.   |
+
+### Responsive Implementation Logic
+
+We utilize the MUI breakpoint system to toggle visibility between mobile and desktop views:
+
+- `display: { xs: 'none', md: 'flex' }`: Ensures elements only appear on screens wider than 900px.
+
+- `display: { xs: 'flex', md: 'none' }`: Ensures the mobile menu is only accessible on small devices.

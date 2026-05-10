@@ -9,7 +9,8 @@ import Blogs from "./components/Blogs";
 import Notification from "./components/Notification";
 import Blog from "./components/Blog";
 import CreateNew from "./components/CreateNew";
-import { Container } from "@mui/material";
+import { Container, AppBar, Toolbar, Button } from "@mui/material";
+import Navigation from "./components/Navigation";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
@@ -19,22 +20,19 @@ const App = () => {
 
   const navigate = useNavigate();
 
-  const apiBlogs = () => {
-    const fetchBlogs = async () => {
-      try {
-        const blogsData = await blogService.getBlogs();
-        setBlogs(blogsData);
-      } catch (error) {
-        setNotification({
-          message: error.message,
-          type: "error",
-        });
-      } finally {
-        //
-      }
-    };
-
-    fetchBlogs();
+  const apiBlogs = async () => {
+    try {
+      const blogsData = await blogService.getBlogs();
+      setBlogs(blogsData);
+    } catch (error) {
+      setNotification({
+        text:
+          error.message ||
+          error.response?.data?.error ||
+          "Failed to load blogs",
+        type: "error",
+      });
+    }
   };
 
   useEffect(() => {
@@ -71,9 +69,14 @@ const App = () => {
       blogService.setToken(user.token);
       setUser(user);
       navigate("/");
+
+      setNotification({
+        text: `${user.username.toUpperCase()} logged in`,
+        type: "info",
+      });
     } catch {
       setNotification({
-        message: "Wrong username or password",
+        text: "Wrong username or password",
         type: "error",
       });
     } finally {
@@ -104,7 +107,7 @@ const App = () => {
       setBlogs(blogs.concat(blogWithFullUser));
 
       setNotification({
-        message: `A new blog ${returnedBlog.title.toUpperCase()} by ${returnedBlog.author.toUpperCase()} added`,
+        text: `A new blog ${returnedBlog.title.toUpperCase()} by ${returnedBlog.author.toUpperCase()} added`,
         type: "success",
       });
 
@@ -112,8 +115,9 @@ const App = () => {
 
       return returnedBlog;
     } catch (error) {
+      const message = error.response?.data?.error || error.message;
       setNotification({
-        message: `Failed to create blog. Title, author, and url are required. ${error.message}`,
+        text: `Failed to create blog: ${message}`,
         type: "error",
       });
     }
@@ -139,7 +143,7 @@ const App = () => {
       setBlogs(blogs.map((b) => (b.id !== blog.id ? b : updatedBlogForState)));
     } catch (error) {
       setNotification({
-        message: `Error updating likes: ${error.message}`,
+        text: `Error updating likes: ${error.message || "An error occurred while trying to like"}`,
         type: "error",
       });
     }
@@ -151,47 +155,27 @@ const App = () => {
         await blogService.remove(blog.id);
         setBlogs(blogs.filter((b) => b.id !== blog.id));
         setNotification({
-          message: `Deleted ${blog.title} by ${blog.author}`,
+          text: `Deleted ${blog.title} by ${blog.author}`,
           type: "success",
         });
 
         navigate("/");
       } catch (error) {
         setNotification({
-          message: `Error deleting blog: ${error.message}`,
+          text: `Error deleting blog: ${error.message || "An error occurred while deleting blog"}`,
           type: "error",
         });
       }
     }
   };
 
-  const padding = {
-    padding: 5,
-  };
+  const style = { "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } };
 
   return (
     <Container>
-      <nav>
-        <Link style={padding} to="/">
-          blogs
-        </Link>
+      <Navigation user={user} handleLogout={handleLogout} />
 
-        {user && (
-          <Link style={padding} to="/create">
-            new blog
-          </Link>
-        )}
-
-        {user ? (
-          <button onClick={handleLogout} style={padding}>
-            logout
-          </button>
-        ) : (
-          <Link style={padding} to="/login">
-            login
-          </Link>
-        )}
-      </nav>
+      <Notification notification={notification} />
 
       <Routes>
         <Route
@@ -210,8 +194,6 @@ const App = () => {
           path="/"
           element={
             <div>
-              <Notification notification={notification} />
-              {user && <p>{`${user.username.toUpperCase()} logged in`}</p>}
               <Blogs blogs={blogs} />
             </div>
           }
@@ -232,7 +214,6 @@ const App = () => {
           path="/login"
           element={
             <div>
-              <Notification notification={notification} />
               <Login handleLogin={handleLogin} />
             </div>
           }
